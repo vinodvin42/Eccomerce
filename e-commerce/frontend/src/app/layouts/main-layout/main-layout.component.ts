@@ -1,7 +1,8 @@
 import { AsyncPipe, NgIf } from '@angular/common';
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { filter } from 'rxjs/operators';
 
 import { selectCartItemCount } from '../../state/cart/cart.selectors';
 import type { AppState } from '../../state';
@@ -81,28 +82,32 @@ import { AuthService } from '../../core/services/auth.service';
         color: var(--premium-onyx);
       }
       .layout__sidebar {
-        width: 260px;
-        background: #fff;
-        border-right: 1px solid var(--premium-silver);
+        width: 280px;
+        background: #2d2d2d;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
         display: flex;
         flex-direction: column;
-        box-shadow: 2px 0 20px var(--premium-shadow);
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4);
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
       }
       .sidebar__header {
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--premium-silver);
+        padding: 1.75rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(120deg, rgba(212, 175, 55, 0.15), rgba(183, 110, 121, 0.15));
+      }
+      .sidebar__header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #ffffff;
         background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-      }
-      .sidebar__header h2 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--premium-rose-gold);
-        background: none;
-        -webkit-text-fill-color: var(--premium-rose-gold);
+        letter-spacing: -0.01em;
       }
       .sidebar__nav {
         flex: 1;
@@ -111,95 +116,156 @@ import { AuthService } from '../../core/services/auth.service';
       .sidebar__nav a {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1.5rem;
-        color: var(--premium-titanium);
+        gap: 0.875rem;
+        padding: 0.875rem 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
         text-decoration: none;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 0.95rem;
+        position: relative;
       }
       .sidebar__nav a:hover {
-        background: var(--premium-moonstone);
-        color: var(--premium-onyx);
+        background: rgba(212, 175, 55, 0.1);
+        color: #ffffff;
+        padding-left: 1.75rem;
       }
       .sidebar__nav a.active {
-        background: var(--premium-moonstone);
-        color: var(--premium-rose-gold);
-        border-left: 3px solid var(--premium-rose-gold);
+        background: rgba(212, 175, 55, 0.2);
+        color: #d4af37;
+        border-left: 3px solid #d4af37;
         font-weight: 700;
-        box-shadow: inset 0 0 20px rgba(183, 110, 121, 0.1);
+        box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.15);
+      }
+      .sidebar__nav a.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #d4af37;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
       }
       .sidebar__nav a span {
         font-size: 1.25rem;
+        filter: grayscale(0);
+        transition: transform 0.3s ease;
+      }
+      .sidebar__nav a:hover span {
+        transform: scale(1.1);
       }
       .layout__main {
         flex: 1;
         display: flex;
         flex-direction: column;
         background: var(--premium-pearl);
+        min-width: 0;
       }
       .layout__header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 2rem;
-        background: #fff;
-        border-bottom: 1px solid var(--premium-silver);
-        box-shadow: 0 2px 10px var(--premium-shadow);
+        padding: 1.25rem 2rem;
+        background: #2d2d2d;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+        position: sticky;
+        top: 0;
+        z-index: 100;
       }
       .header__title h1 {
         margin: 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--premium-onyx);
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.01em;
       }
       .header__actions {
         display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+      .btn-link {
+        padding: 0.625rem 1.25rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
         gap: 0.5rem;
+      }
+      .btn-link:hover {
+        background: rgba(212, 175, 55, 0.2);
+        border-color: #d4af37;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
       }
       .btn-icon,
       .btn-user {
-        padding: 0.5rem;
-        background: var(--premium-moonstone);
-        border: 1px solid var(--premium-silver);
-        border-radius: 0.5rem;
-        color: var(--premium-onyx);
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        color: #ffffff;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+      }
+      .btn-icon:hover,
+      .btn-user:hover {
+        background: rgba(212, 175, 55, 0.2);
+        border-color: #d4af37;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
       }
       .btn-cart {
         position: relative;
-        padding: 0.5rem 1rem;
-        background: var(--premium-moonstone);
-        border: 1px solid var(--premium-silver);
-        border-radius: 0.5rem;
-        color: var(--premium-onyx);
+        padding: 0.625rem 1.25rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+        color: #ffffff;
         text-decoration: none;
         font-weight: 600;
-        transition: all 0.2s;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
       }
       .btn-cart:hover {
-        background: var(--premium-silver);
-        border-color: var(--premium-gold);
+        background: rgba(212, 175, 55, 0.2);
+        border-color: #d4af37;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
       }
       .cart-badge {
         position: absolute;
         top: -8px;
         right: -8px;
-        background: var(--premium-rose-gold);
+        background: #ef4444;
         color: #fff;
-        border-radius: 999px;
-        width: 20px;
+        border-radius: 50%;
+        min-width: 20px;
         height: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 700;
-      }
-      .btn-icon:hover,
-      .btn-user:hover {
-        background: var(--premium-silver);
-        border-color: var(--premium-gold);
+        border: 2px solid #2d2d2d;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
       }
       .layout__content {
         flex: 1;
@@ -207,26 +273,96 @@ import { AuthService } from '../../core/services/auth.service';
         overflow-y: auto;
         background: var(--premium-pearl);
       }
+      @media (max-width: 1024px) {
+        .layout__sidebar {
+          width: 240px;
+        }
+        .layout__header {
+          padding: 1rem 1.5rem;
+        }
+        .header__title h1 {
+          font-size: 1.5rem;
+        }
+      }
+      @media (max-width: 768px) {
+        .layout {
+          flex-direction: column;
+        }
+        .layout__sidebar {
+          width: 100%;
+          height: auto;
+          position: relative;
+          max-height: 60vh;
+        }
+        .layout__header {
+          padding: 1rem;
+        }
+        .header__actions {
+          gap: 0.5rem;
+        }
+        .btn-link,
+        .btn-cart {
+          padding: 0.5rem 1rem;
+          font-size: 0.85rem;
+        }
+        .btn-icon,
+        .btn-user {
+          width: 40px;
+          height: 40px;
+          padding: 0.5rem;
+        }
+        .layout__content {
+          padding: 1.5rem 1rem;
+        }
+      }
     `,
   ],
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   pageTitle = 'Dashboard';
   cartCount$ = this.store.select(selectCartItemCount);
   private readonly userRole = this.authService.getStoredUser()?.role ?? null;
 
+  private readonly titleMap: Record<string, string> = {
+    '/admin': 'Dashboard',
+    '/admin/products': 'Products',
+    '/admin/orders': 'Orders',
+    '/admin/returns': 'Returns',
+    '/admin/discounts': 'Discounts',
+    '/admin/tenants': 'Tenants',
+    '/admin/users': 'Users',
+    '/admin/masters': 'Master Data',
+    '/admin/audit-logs': 'Audit Logs',
+  };
+
   constructor(
     private readonly store: Store<AppState>,
     private readonly brandingService: BrandingService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {}
+
+  ngOnInit(): void {
+    // Update page title based on route
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => {
+        const url = this.router.url.split('?')[0];
+        this.pageTitle = this.titleMap[url] || 'Dashboard';
+      });
+
+    // Set initial title
+    const url = this.router.url.split('?')[0];
+    this.pageTitle = this.titleMap[url] || 'Dashboard';
+  }
 
   brandTitle(): string {
     return this.brandingService.getAdminBrand(this.userRole);
   }
 
   isSuperAdmin(): boolean {
-    return (this.userRole ?? '').toLowerCase() === 'super_admin';
+    const role = (this.userRole ?? '').toLowerCase();
+    return role === 'superadmin' || role === 'super_admin';
   }
 }
 

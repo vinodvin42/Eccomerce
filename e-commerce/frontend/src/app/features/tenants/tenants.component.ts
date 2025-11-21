@@ -201,11 +201,12 @@ interface TenantViewModel {
   styles: [
     `
       .panel {
-        background: #1e1b4b;
-        padding: 1.5rem;
+        background: #fff;
+        padding: 2rem;
         border-radius: 1rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.8);
+        box-shadow: 0 20px 40px var(--premium-shadow);
+        border: 1px solid var(--premium-silver);
       }
       .panel__header {
         display: flex;
@@ -213,6 +214,17 @@ interface TenantViewModel {
         align-items: center;
         gap: 1rem;
         margin-bottom: 1.5rem;
+      }
+      .panel__header h2 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.75rem;
+        color: var(--premium-onyx);
+        font-weight: 700;
+      }
+      .panel__header p {
+        margin: 0;
+        color: var(--premium-titanium);
+        font-size: 0.95rem;
       }
       .header-actions {
         display: flex;
@@ -233,10 +245,16 @@ interface TenantViewModel {
       }
       .search-field input {
         padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
-        border: 1px solid #334155;
-        background: #020617;
-        color: #f8fafc;
+        border-radius: 0.5rem;
+        border: 1px solid var(--premium-silver);
+        background: #fff;
+        color: var(--premium-onyx);
+        transition: all 0.2s;
+      }
+      .search-field input:focus {
+        outline: none;
+        border-color: var(--premium-gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
       }
       .status-pills {
         display: flex;
@@ -245,15 +263,22 @@ interface TenantViewModel {
       .status-pills button {
         padding: 0.5rem 1rem;
         border-radius: 999px;
-        border: 1px solid #334155;
-        background: transparent;
-        color: #f8fafc;
+        border: 1px solid var(--premium-silver);
+        background: var(--premium-moonstone);
+        color: var(--premium-onyx);
         cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+      }
+      .status-pills button:hover {
+        background: var(--premium-silver);
+        border-color: var(--premium-gold);
       }
       .status-pills button.active {
-        background: rgba(56, 189, 248, 0.15);
-        border-color: #38bdf8;
-        color: #38bdf8;
+        background: rgba(183, 110, 121, 0.12);
+        border-color: var(--premium-rose-gold);
+        color: var(--premium-rose-gold);
+        font-weight: 600;
       }
       .tenant-stats {
         display: grid;
@@ -262,21 +287,24 @@ interface TenantViewModel {
         margin-bottom: 1.5rem;
       }
       .stat-card {
-        background: rgba(2, 6, 23, 0.4);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: #fff;
+        border: 1px solid var(--premium-silver);
         border-radius: 0.75rem;
-        padding: 1rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 10px 30px var(--premium-shadow);
       }
       .stat-card .label {
         display: block;
         font-size: 0.8rem;
-        color: #94a3b8;
+        color: var(--premium-titanium);
         text-transform: uppercase;
         letter-spacing: 0.08em;
+        font-weight: 600;
       }
       .stat-card strong {
         font-size: 1.75rem;
-        color: #f8fafc;
+        color: var(--premium-onyx);
+        font-weight: 800;
       }
       .tenants-layout {
         display: grid;
@@ -284,11 +312,12 @@ interface TenantViewModel {
         gap: 1.5rem;
       }
       .table-wrapper {
-        background: rgba(2, 6, 23, 0.4);
+        background: #fff;
         border-radius: 1rem;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid var(--premium-silver);
         padding: 1rem;
         position: relative;
+        box-shadow: 0 10px 30px var(--premium-shadow);
       }
       table {
         width: 100%;
@@ -298,30 +327,36 @@ interface TenantViewModel {
       td {
         text-align: left;
         padding: 0.75rem;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        border-bottom: 1px solid var(--premium-silver);
       }
       th {
+        background: var(--premium-moonstone);
         text-transform: uppercase;
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: var(--premium-titanium);
         letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+      td {
+        color: var(--premium-onyx);
       }
       tr {
         cursor: pointer;
         transition: background 0.2s;
       }
       tr:hover {
-        background: rgba(56, 189, 248, 0.05);
+        background: var(--premium-moonstone);
       }
       tr.selected {
-        background: rgba(56, 189, 248, 0.1);
+        background: rgba(183, 110, 121, 0.12);
       }
       code {
-        background: rgba(148, 163, 184, 0.15);
+        background: rgba(183, 110, 121, 0.12);
         padding: 0.25rem 0.5rem;
         border-radius: 0.35rem;
         font-family: monospace;
         font-size: 0.85rem;
+        color: var(--premium-rose-gold);
       }
       .badge {
         padding: 0.25rem 0.75rem;
@@ -345,8 +380,8 @@ interface TenantViewModel {
       .spinner {
         width: 32px;
         height: 32px;
-        border: 4px solid #1e293b;
-        border-top-color: #38bdf8;
+        border: 4px solid var(--premium-silver);
+        border-top-color: var(--premium-rose-gold);
         border-radius: 50%;
         margin: 0 auto 0.75rem;
         animation: spin 1s linear infinite;
@@ -359,17 +394,19 @@ interface TenantViewModel {
       .empty-state {
         text-align: center;
         padding: 3rem 1rem;
-        color: #94a3b8;
+        color: var(--premium-titanium);
       }
       .empty-icon {
         font-size: 2.5rem;
         margin-bottom: 1rem;
+        opacity: 0.5;
       }
       .tenant-detail {
-        background: rgba(2, 6, 23, 0.6);
+        background: #fff;
         border-radius: 1rem;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid var(--premium-silver);
         padding: 1.5rem;
+        box-shadow: 0 10px 30px var(--premium-shadow);
       }
       .detail-header {
         display: flex;
@@ -382,8 +419,9 @@ interface TenantViewModel {
         text-transform: uppercase;
         letter-spacing: 0.3em;
         font-size: 0.7rem;
-        color: #94a3b8;
+        color: var(--premium-titanium);
         margin: 0;
+        font-weight: 600;
       }
       .detail-slug {
         display: flex;
@@ -394,9 +432,13 @@ interface TenantViewModel {
       .btn-link {
         border: none;
         background: transparent;
-        color: #38bdf8;
+        color: var(--premium-rose-gold);
         cursor: pointer;
         font-weight: 600;
+        transition: color 0.2s;
+      }
+      .btn-link:hover {
+        color: var(--premium-gold);
       }
       dl {
         display: flex;
@@ -408,20 +450,21 @@ interface TenantViewModel {
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #94a3b8;
+        color: var(--premium-titanium);
+        font-weight: 600;
       }
       dd {
         margin: 0.15rem 0 0;
-        color: #f8fafc;
+        color: var(--premium-onyx);
         font-weight: 600;
       }
       .detail-toast {
         margin-top: 1rem;
         padding: 0.75rem 1rem;
-        background: rgba(56, 189, 248, 0.1);
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid #10b981;
         border-radius: 0.5rem;
-        color: #bae6fd;
+        color: #10b981;
         font-size: 0.85rem;
       }
       form {
@@ -433,19 +476,25 @@ interface TenantViewModel {
         display: flex;
         flex-direction: column;
         font-weight: 600;
-        color: #c4b5fd;
+        color: var(--premium-onyx);
       }
       input {
         padding: 0.75rem;
-        border-radius: 0.75rem;
-        border: 1px solid #1e293b;
-        background: #020617;
-        color: #f8fafc;
+        border-radius: 0.5rem;
+        border: 1px solid var(--premium-silver);
+        background: #fff;
+        color: var(--premium-onyx);
         margin-top: 0.25rem;
+        transition: all 0.2s;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--premium-gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
       }
       small {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: var(--premium-titanium);
       }
       .form-actions {
         display: flex;
@@ -455,19 +504,29 @@ interface TenantViewModel {
       .btn-primary,
       .btn-secondary {
         padding: 0.75rem 1.5rem;
-        border-radius: 999px;
+        border-radius: 0.5rem;
         font-weight: 600;
         cursor: pointer;
-        border: none;
+        transition: all 0.2s;
       }
       .btn-primary {
-        background: #38bdf8;
-        color: #0f172a;
+        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
+        color: #fff;
+        border: none;
+        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
+      }
+      .btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
       }
       .btn-secondary {
-        background: transparent;
-        border: 1px solid #334155;
-        color: #f8fafc;
+        background: var(--premium-moonstone);
+        border: 1px solid var(--premium-silver);
+        color: var(--premium-onyx);
+      }
+      .btn-secondary:hover {
+        background: var(--premium-silver);
+        border-color: var(--premium-gold);
       }
       button:disabled {
         opacity: 0.5;

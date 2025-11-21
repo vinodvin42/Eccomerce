@@ -234,16 +234,23 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         display: flex;
         flex-direction: column;
         font-weight: 600;
-        color: #c4b5fd;
+        color: var(--premium-onyx);
       }
       input,
       select {
-        padding: 0.5rem;
+        padding: 0.75rem;
         border-radius: 0.5rem;
-        border: 1px solid #1e293b;
-        background: #020617;
-        color: #f8fafc;
+        border: 1px solid var(--premium-silver);
+        background: #fff;
+        color: var(--premium-onyx);
         margin-top: 0.25rem;
+        transition: all 0.2s;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--premium-gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
       }
       .form-actions {
         display: flex;
@@ -252,21 +259,32 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
       }
       .btn-secondary {
         padding: 0.75rem 1.5rem;
-        border: 1px solid #1e293b;
-        border-radius: 999px;
-        background: transparent;
-        color: #f8fafc;
-        font-weight: bold;
+        border: 1px solid var(--premium-silver);
+        border-radius: 0.5rem;
+        background: var(--premium-moonstone);
+        color: var(--premium-onyx);
+        font-weight: 600;
         cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-secondary:hover {
+        background: var(--premium-silver);
+        border-color: var(--premium-gold);
       }
       button[type='submit'] {
         padding: 0.75rem 1.5rem;
         border: none;
-        border-radius: 999px;
-        background: #38bdf8;
-        color: #0f172a;
-        font-weight: bold;
+        border-radius: 0.5rem;
+        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
+        color: #fff;
+        font-weight: 600;
         cursor: pointer;
+        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
+        transition: all 0.2s;
+      }
+      button[type='submit']:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
       }
       button:disabled {
         opacity: 0.5;

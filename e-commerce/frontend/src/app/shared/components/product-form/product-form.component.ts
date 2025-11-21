@@ -176,6 +176,102 @@ import type { Category } from '../../../shared/models/category';
         flex-direction: column;
         gap: 1.5rem;
       }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--premium-onyx);
+        font-size: 0.9rem;
+      }
+
+      input[type='text'],
+      input[type='number'],
+      input[type='url'],
+      input[type='email'],
+      select,
+      textarea {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--premium-silver);
+        background: #fff;
+        color: var(--premium-onyx);
+        font-size: 1rem;
+        transition: all 0.2s;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--premium-gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      small {
+        color: #ef4444;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--premium-silver);
+      }
+
+      .btn-primary {
+        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: var(--premium-moonstone);
+        color: var(--premium-onyx);
+        padding: 0.75rem 1.5rem;
+        border: 1px solid var(--premium-silver);
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        background: var(--premium-silver);
+        border-color: var(--premium-gold);
+      }
     `,
   ],
 })

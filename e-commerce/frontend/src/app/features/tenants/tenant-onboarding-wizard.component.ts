@@ -250,52 +250,91 @@ interface TenantOnboardingResponse {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.75);
+        background: rgba(15, 17, 17, 0.75);
         backdrop-filter: blur(4px);
       }
 
       .wizard-container {
         position: relative;
-        background: #1e1b4b;
+        background: #fff;
+        border: 1px solid var(--premium-silver);
         border-radius: 1rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 175, 55, 0.1);
         width: 100%;
         max-width: 700px;
         max-height: 90vh;
         overflow-y: auto;
         z-index: 1001;
+        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(30px) scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
       }
 
       .wizard-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        padding: 1.75rem 2rem;
+        border-bottom: 1px solid var(--premium-silver);
+        background: linear-gradient(120deg, rgba(212, 175, 55, 0.05), rgba(183, 110, 121, 0.05));
+        position: relative;
+      }
+
+      .wizard-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--premium-gold), var(--premium-rose-gold));
       }
 
       .wizard-header h2 {
         margin: 0;
-        color: #f8fafc;
+        color: var(--premium-onyx);
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
       }
 
       .wizard-close {
-        background: transparent;
-        border: none;
-        color: #94a3b8;
+        background: var(--premium-moonstone);
+        border: 1px solid var(--premium-silver);
+        color: var(--premium-titanium);
         font-size: 1.5rem;
         cursor: pointer;
-        padding: 0.5rem;
+        padding: 0;
+        width: 2.5rem;
+        height: 2.5rem;
         line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
       }
 
       .wizard-close:hover {
-        color: #f8fafc;
+        background: rgba(183, 110, 121, 0.1);
+        border-color: var(--premium-rose-gold);
+        color: var(--premium-rose-gold);
+        transform: rotate(90deg) scale(1.1);
       }
 
       .wizard-progress {
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--premium-silver);
+        background: var(--premium-moonstone);
       }
 
       .progress-steps {
@@ -316,45 +355,62 @@ interface TenantOnboardingResponse {
         width: 2.5rem;
         height: 2.5rem;
         border-radius: 50%;
-        background: rgba(148, 163, 184, 0.2);
-        color: #94a3b8;
+        background: var(--premium-moonstone);
+        border: 2px solid var(--premium-silver);
+        color: var(--premium-titanium);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        transition: all 0.3s;
+        font-weight: 700;
+        transition: all 0.3s ease;
       }
 
       .step.active .step-number {
-        background: #38bdf8;
-        color: #0f172a;
+        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
+        border-color: var(--premium-rose-gold);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(183, 110, 121, 0.3);
+        transform: scale(1.1);
       }
 
       .step.completed .step-number {
         background: #10b981;
-        color: #0f172a;
+        border-color: #10b981;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
       }
 
       .step-label {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: var(--premium-titanium);
         text-align: center;
+        font-weight: 500;
       }
 
       .step.active .step-label {
-        color: #38bdf8;
-        font-weight: 600;
+        color: var(--premium-rose-gold);
+        font-weight: 700;
+      }
+
+      .step.completed .step-label {
+        color: #10b981;
       }
 
       .step-indicator {
         flex: 1;
         height: 2px;
-        background: rgba(148, 163, 184, 0.2);
+        background: var(--premium-silver);
         margin: 0 0.5rem;
+        transition: background 0.3s ease;
+      }
+
+      .step.completed + .step-indicator {
+        background: linear-gradient(90deg, var(--premium-gold), var(--premium-rose-gold));
       }
 
       .wizard-form {
-        padding: 1.5rem;
+        padding: 2rem;
+        background: #fff;
       }
 
       .wizard-step {
@@ -365,12 +421,15 @@ interface TenantOnboardingResponse {
 
       .wizard-step h3 {
         margin: 0;
-        color: #f8fafc;
+        color: var(--premium-onyx);
+        font-size: 1.5rem;
+        font-weight: 700;
       }
 
       .step-description {
-        color: #94a3b8;
+        color: var(--premium-titanium);
         margin: 0;
+        font-size: 0.95rem;
       }
 
       .wizard-form label {
@@ -380,8 +439,9 @@ interface TenantOnboardingResponse {
       }
 
       .wizard-form label span {
-        color: #f8fafc;
-        font-weight: 500;
+        color: var(--premium-onyx);
+        font-weight: 600;
+        font-size: 0.9rem;
       }
 
       .required {
@@ -393,16 +453,17 @@ interface TenantOnboardingResponse {
       .wizard-form input[type='password'] {
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
-        border: 1px solid #334155;
-        background: #020617;
-        color: #f8fafc;
+        border: 1px solid var(--premium-silver);
+        background: #fff;
+        color: var(--premium-onyx);
         font-size: 1rem;
+        transition: all 0.2s;
       }
 
       .wizard-form input:focus {
         outline: none;
-        border-color: #38bdf8;
-        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        border-color: var(--premium-gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
       }
 
       .wizard-form small {
@@ -419,23 +480,30 @@ interface TenantOnboardingResponse {
       .option-card {
         display: flex;
         gap: 1rem;
-        padding: 1rem;
-        border: 1px solid #334155;
-        border-radius: 0.5rem;
-        background: rgba(2, 6, 23, 0.4);
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--premium-silver);
+        border-radius: 0.75rem;
+        background: var(--premium-moonstone);
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
       }
 
       .option-card:hover {
-        border-color: #38bdf8;
-        background: rgba(56, 189, 248, 0.05);
+        border-color: var(--premium-rose-gold);
+        background: rgba(183, 110, 121, 0.08);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(183, 110, 121, 0.15);
+      }
+
+      .option-card input[type='checkbox']:checked + div {
+        color: var(--premium-rose-gold);
       }
 
       .option-card input[type='checkbox'] {
         width: 1.25rem;
         height: 1.25rem;
         cursor: pointer;
+        accent-color: var(--premium-rose-gold);
       }
 
       .option-card div {
@@ -444,13 +512,14 @@ interface TenantOnboardingResponse {
 
       .option-card strong {
         display: block;
-        color: #f8fafc;
+        color: var(--premium-onyx);
         margin-bottom: 0.25rem;
+        font-weight: 600;
       }
 
       .option-card p {
         margin: 0;
-        color: #94a3b8;
+        color: var(--premium-titanium);
         font-size: 0.875rem;
       }
 
@@ -460,7 +529,10 @@ interface TenantOnboardingResponse {
         gap: 1rem;
         margin-top: 2rem;
         padding-top: 1.5rem;
-        border-top: 1px solid rgba(148, 163, 184, 0.2);
+        border-top: 1px solid var(--premium-silver);
+        background: var(--premium-moonstone);
+        padding: 1.5rem 2rem;
+        margin: 0;
       }
 
       .wizard-success {
@@ -472,45 +544,52 @@ interface TenantOnboardingResponse {
         width: 4rem;
         height: 4rem;
         border-radius: 50%;
-        background: #10b981;
-        color: #0f172a;
+        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 2rem;
         font-weight: bold;
         margin: 0 auto 1rem;
+        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
       }
 
       .wizard-success h3 {
-        color: #f8fafc;
+        color: var(--premium-onyx);
         margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
       }
 
       .wizard-success p {
-        color: #94a3b8;
+        color: var(--premium-titanium);
         margin: 0 0 1.5rem;
       }
 
       .success-details {
-        background: rgba(2, 6, 23, 0.4);
-        border-radius: 0.5rem;
-        padding: 1rem;
+        background: var(--premium-moonstone);
+        border: 1px solid var(--premium-silver);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
         text-align: left;
+        box-shadow: 0 10px 30px var(--premium-shadow);
       }
 
       .success-details p {
         margin: 0.5rem 0;
-        color: #f8fafc;
+        color: var(--premium-onyx);
+        font-weight: 500;
       }
 
       .wizard-error {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid #ef4444;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        color: #fca5a5;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        color: #ef4444;
         margin-bottom: 1rem;
+        font-weight: 500;
       }
 
       .wizard-loading {
@@ -521,8 +600,8 @@ interface TenantOnboardingResponse {
       .spinner {
         width: 3rem;
         height: 3rem;
-        border: 3px solid rgba(148, 163, 184, 0.2);
-        border-top-color: #38bdf8;
+        border: 3px solid var(--premium-silver);
+        border-top-color: var(--premium-rose-gold);
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
         margin: 0 auto 1rem;
@@ -538,33 +617,40 @@ interface TenantOnboardingResponse {
       .btn-secondary {
         padding: 0.75rem 1.5rem;
         border-radius: 0.5rem;
-        border: none;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
       }
 
       .btn-primary {
-        background: #38bdf8;
-        color: #0f172a;
+        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
+        color: #fff;
+        border: none;
+        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
       }
 
       .btn-primary:hover:not(:disabled) {
-        background: #0ea5e9;
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(183, 110, 121, 0.4);
       }
 
       .btn-primary:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        transform: none;
       }
 
       .btn-secondary {
-        background: rgba(148, 163, 184, 0.2);
-        color: #f8fafc;
+        background: var(--premium-moonstone);
+        border: 1px solid var(--premium-silver);
+        color: var(--premium-onyx);
       }
 
       .btn-secondary:hover:not(:disabled) {
-        background: rgba(148, 163, 184, 0.3);
+        background: var(--premium-silver);
+        border-color: var(--premium-gold);
       }
 
       .btn-secondary:disabled {
