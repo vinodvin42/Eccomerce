@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 
 from app.core.config import get_settings
 from app.db.models.category import Category
+from app.db.utils import ensure_async_database_url
 from app.db.models.order import Order, OrderItem
 from app.db.models.payment_method import PaymentMethod, PaymentMethodType
 from app.db.models.product import Product
@@ -213,7 +214,8 @@ def read_excel_products(excel_path: str) -> list[dict]:
 
 
 settings = get_settings()
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+async_database_url = ensure_async_database_url(settings.database_url)
+engine = create_async_engine(async_database_url, pool_pre_ping=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
