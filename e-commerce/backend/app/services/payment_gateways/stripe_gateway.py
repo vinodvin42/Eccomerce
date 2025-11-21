@@ -6,7 +6,19 @@ from decimal import Decimal
 from typing import Any
 
 import stripe
-from stripe.error import StripeError
+
+# Handle Stripe error imports for different versions
+# Stripe v8+ changed error module structure
+try:
+    # Try the old way first (stripe.error.StripeError)
+    from stripe.error import StripeError  # type: ignore[attr-defined]
+except (ImportError, AttributeError):
+    # For newer Stripe versions, try direct import
+    try:
+        StripeError = stripe.StripeError  # type: ignore[attr-defined]
+    except AttributeError:
+        # Ultimate fallback: use Exception
+        StripeError = Exception
 
 from app.core.config import get_settings
 from app.services.payment_gateways.base import PaymentGateway, PaymentResult
