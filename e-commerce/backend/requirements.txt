@@ -3,6 +3,7 @@
 # This file is a fallback if Poetry installation fails
 
 fastapi>=0.111.0
+python-multipart>=0.0.6
 uvicorn[standard]>=0.30.3
 sqlalchemy>=2.0.32
 asyncpg>=0.29.0
