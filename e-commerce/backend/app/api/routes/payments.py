@@ -16,6 +16,7 @@ from app.schemas.payment import (
     ConfirmPaymentResponse,
     CreatePaymentIntentRequest,
     PaymentTransactionRead,
+    RefundPaymentRequest,
 )
 from app.services.payments import PaymentService
 
@@ -71,6 +72,21 @@ async def get_payment_status(
     """Get payment transaction status."""
     service = PaymentService(session)
     transaction = await service.get_payment_status(tenant.tenant_id, transaction_id)
+    return serialize_payment_transaction(transaction)
+
+
+@router.post("/refund", response_model=PaymentTransactionRead)
+async def refund_payment(
+    payload: RefundPaymentRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+    actor_id: UUID = Depends(get_request_actor),
+    session: AsyncSession = Depends(get_session),
+):
+    """Refund a payment (full or partial)."""
+    service = PaymentService(session)
+    transaction = await service.refund_payment(
+        tenant.tenant_id, payload.transaction_id, actor_id, payload.amount, payload.reason
+    )
     return serialize_payment_transaction(transaction)
 
 

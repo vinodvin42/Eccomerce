@@ -7,9 +7,14 @@ import uuid
 
 from sqlalchemy import Enum, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 
 from app.db.base import AuditMixin, Base, TenantMixin
+
+if TYPE_CHECKING:  # pragma: no cover - typing helpers
+    from app.db.models.product import Product
 
 
 class OrderStatus(str, enum.Enum):
@@ -68,4 +73,10 @@ class OrderItem(TenantMixin, AuditMixin, Base):
     unit_price_amount: Mapped[Numeric] = mapped_column(Numeric(12, 2), nullable=False)
 
     order: Mapped["Order"] = relationship("Order", back_populates="items")
+    product: Mapped["Product | None"] = relationship(
+        "Product",
+        primaryjoin="foreign(OrderItem.product_id) == Product.id",
+        lazy="joined",
+        viewonly=True,
+    )
 

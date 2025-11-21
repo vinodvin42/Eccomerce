@@ -10,7 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_request_actor
 from app.db.models.tenant import Tenant
 from app.db.session import get_session
-from app.schemas.tenant import TenantCreate, TenantOnboardingRequest, TenantOnboardingResponse, TenantRead
+from app.schemas.tenant import (
+    TenantCreate,
+    TenantOnboardingRequest,
+    TenantOnboardingResponse,
+    TenantRead,
+    TenantSuspendRequest,
+    TenantUpdate,
+)
 from app.services.tenants import TenantService
 
 router = APIRouter(prefix="/api/v1/tenants", tags=["Tenants"])
@@ -65,6 +72,44 @@ async def get_tenant(
 ):
     service = TenantService(session)
     tenant = await service.get_tenant(tenant_id)
+    return serialize_tenant(tenant)
+
+
+@router.patch("/{tenant_id}", response_model=TenantRead)
+async def update_tenant(
+    tenant_id: UUID,
+    payload: TenantUpdate,
+    actor_id: UUID = Depends(get_request_actor),
+    session: AsyncSession = Depends(get_session),
+):
+    """Update tenant details."""
+    service = TenantService(session)
+    tenant = await service.update_tenant(tenant_id, actor_id, payload)
+    return serialize_tenant(tenant)
+
+
+@router.post("/{tenant_id}/suspend", response_model=TenantRead)
+async def suspend_tenant(
+    tenant_id: UUID,
+    payload: TenantSuspendRequest,
+    actor_id: UUID = Depends(get_request_actor),
+    session: AsyncSession = Depends(get_session),
+):
+    """Suspend a tenant."""
+    service = TenantService(session)
+    tenant = await service.suspend_tenant(tenant_id, actor_id, payload.reason)
+    return serialize_tenant(tenant)
+
+
+@router.post("/{tenant_id}/activate", response_model=TenantRead)
+async def activate_tenant(
+    tenant_id: UUID,
+    actor_id: UUID = Depends(get_request_actor),
+    session: AsyncSession = Depends(get_session),
+):
+    """Activate a suspended tenant."""
+    service = TenantService(session)
+    tenant = await service.activate_tenant(tenant_id, actor_id)
     return serialize_tenant(tenant)
 
 

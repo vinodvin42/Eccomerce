@@ -6,7 +6,22 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import audit, auth, categories, discounts, notifications, orders, payment_methods, payments, products, reports, shipping_methods, tenants, users
+from app.api.routes import (
+    audit,
+    auth,
+    categories,
+    discounts,
+    notifications,
+    orders,
+    payment_methods,
+    payments,
+    products,
+    reports,
+    returns,
+    shipping_methods,
+    tenants,
+    users,
+)
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -39,6 +54,7 @@ app.include_router(categories.router)
 app.include_router(shipping_methods.router)
 app.include_router(discounts.router)
 app.include_router(payments.router)
+app.include_router(returns.router)
 
 
 @app.get("/health", tags=["Diagnostics"])

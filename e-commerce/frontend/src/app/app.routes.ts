@@ -7,6 +7,7 @@ import { UsersComponent } from './features/users/users.component';
 import { AuditLogsComponent } from './features/audit-logs/audit-logs.component';
 import { MastersComponent } from './features/masters/masters.component';
 import { DiscountsComponent } from './features/discounts/discounts.component';
+import { ReturnsComponent } from './features/returns/returns.component';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 import { StoreLayoutComponent } from './layouts/store-layout/store-layout.component';
 import { StoreComponent } from './features/store/store.component';
@@ -30,6 +31,7 @@ export const appRoutes: Routes = [
       { path: '', component: DashboardComponent, title: 'Dashboard' },
       { path: 'products', component: ProductsComponent, title: 'Products' },
       { path: 'orders', component: OrdersComponent, title: 'Orders' },
+      { path: 'returns', component: ReturnsComponent, title: 'Returns' },
       {
         path: 'tenants',
         component: TenantsComponent,

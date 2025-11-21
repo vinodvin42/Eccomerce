@@ -51,6 +51,24 @@ class TenantOnboardingResponse(BaseModel):
     message: str
 
 
+class TenantUpdate(BaseModel):
+    """Schema for updating tenant details."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str | None = None
+    slug: str | None = None
+    primary_contact: str | None = Field(default=None, alias="primaryContact")
+
+
+class TenantSuspendRequest(BaseModel):
+    """Schema for suspending a tenant."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    reason: str = Field(description="Reason for suspending the tenant")
+
+
 class TenantRead(TenantCreate):
     model_config = ConfigDict(populate_by_name=True)
 

@@ -14,7 +14,7 @@ from app.db.models.payment_method import PaymentMethod, PaymentMethodType
 from app.db.models.shipping_method import ShippingMethod
 from app.db.models.tenant import Tenant, TenantStatus
 from app.db.models.user import AuthProvider, User, UserRole, UserStatus
-from app.schemas.tenant import TenantCreate, TenantOnboardingRequest
+from app.schemas.tenant import TenantCreate, TenantOnboardingRequest, TenantSuspendRequest, TenantUpdate
 from app.services.auth import AuthService
 
 
@@ -223,5 +223,82 @@ class TenantService:
         tenant = result.scalar_one_or_none()
         if not tenant:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found.")
+        return tenant
+
+    async def update_tenant(self, tenant_id: UUID, actor_id: UUID, payload: TenantUpdate) -> Tenant:
+        """Update tenant details."""
+        tenant = await self.get_tenant(tenant_id)
+
+        if payload.name is not None:
+            # Check if name is already taken by another tenant
+            existing = await self.session.execute(
+                select(Tenant).where(Tenant.name == payload.name, Tenant.id != tenant_id)
+            )
+            if existing.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Tenant with this name already exists.",
+                )
+            tenant.name = payload.name
+
+        if payload.slug is not None:
+            # Check if slug is already taken by another tenant
+            existing = await self.session.execute(
+                select(Tenant).where(Tenant.slug == payload.slug, Tenant.id != tenant_id)
+            )
+            if existing.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Tenant with this slug already exists.",
+                )
+            tenant.slug = payload.slug
+
+        if payload.primary_contact is not None:
+            tenant.primary_contact = payload.primary_contact
+
+        tenant.modified_by = actor_id
+        await self.session.commit()
+        await self.session.refresh(tenant)
+
+        return tenant
+
+    async def suspend_tenant(self, tenant_id: UUID, actor_id: UUID, reason: str) -> Tenant:
+        """Suspend a tenant."""
+        tenant = await self.get_tenant(tenant_id)
+
+        if tenant.status == TenantStatus.suspended:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tenant is already suspended.",
+            )
+
+        tenant.status = TenantStatus.suspended
+        tenant.modified_by = actor_id
+        await self.session.commit()
+        await self.session.refresh(tenant)
+
+        # Publish tenant.suspended event
+        publish_tenant_suspended(
+            tenant_id=tenant.id,
+            reason=reason,
+        )
+
+        return tenant
+
+    async def activate_tenant(self, tenant_id: UUID, actor_id: UUID) -> Tenant:
+        """Activate a suspended tenant."""
+        tenant = await self.get_tenant(tenant_id)
+
+        if tenant.status == TenantStatus.active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tenant is already active.",
+            )
+
+        tenant.status = TenantStatus.active
+        tenant.modified_by = actor_id
+        await self.session.commit()
+        await self.session.refresh(tenant)
+
         return tenant
 

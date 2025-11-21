@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.events import publish_order_cancelled
 from app.db.models.order import Order, OrderItem, OrderStatus
 from app.db.models.payment_method import PaymentMethod, PaymentMethodType
 from app.db.models.shipping_method import ShippingMethod
@@ -273,5 +274,56 @@ class OrderService:
         order.modified_by = actor_id
         await self.session.commit()
         await self.session.refresh(order, attribute_names=["items"])
+        return order
+
+    async def cancel_order(self, tenant_id: UUID, order_id: UUID, actor_id: UUID, reason: str) -> Order:
+        """Cancel an order and release reserved inventory."""
+        order = await self.get_order(tenant_id, order_id)
+
+        if order.status == OrderStatus.cancelled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Order is already cancelled",
+            )
+
+        if order.status == OrderStatus.confirmed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot cancel a confirmed order. Please process a refund instead.",
+            )
+
+        # Release inventory back to products
+        from app.services.products import ProductService
+
+        product_service = ProductService(self.session)
+        for item in order.items:
+            try:
+                product = await product_service.get_product(tenant_id, item.product_id)
+                product.inventory += item.quantity
+            except Exception as e:
+                # Log error but continue with cancellation
+                import structlog
+
+                logger = structlog.get_logger(__name__)
+                logger.error(
+                    "inventory_release_failed_on_cancel",
+                    product_id=str(item.product_id),
+                    quantity=item.quantity,
+                    error=str(e),
+                )
+
+        # Update order status
+        order.status = OrderStatus.cancelled
+        order.modified_by = actor_id
+        await self.session.commit()
+        await self.session.refresh(order, attribute_names=["items"])
+
+        # Publish order cancelled event
+        publish_order_cancelled(
+            order_id=order.id,
+            tenant_id=tenant_id,
+            reason=reason,
+        )
+
         return order
 

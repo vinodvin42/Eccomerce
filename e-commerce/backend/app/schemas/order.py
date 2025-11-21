@@ -36,6 +36,14 @@ class OrderUpdate(BaseModel):
     shipping_method_id: Optional[UUID] = Field(default=None, alias="shippingMethodId")
 
 
+class OrderCancelRequest(BaseModel):
+    """Schema for canceling an order."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    reason: str = Field(description="Reason for canceling the order")
+
+
 class OrderRead(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

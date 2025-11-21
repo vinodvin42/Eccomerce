@@ -1,15 +1,19 @@
 import { AsyncPipe, CurrencyPipe, DatePipe, NgFor, NgIf, TitleCasePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, of } from 'rxjs';
 
 import { OrderService } from '../../core/services/order.service';
+import { ReturnService } from '../../core/services/return.service';
 import type { Order } from '../../shared/models/order';
+import type { ReturnRequest } from '../../shared/models/returns';
 
 @Component({
   selector: 'app-order-detail',
   standalone: true,
-  imports: [NgIf, NgFor, AsyncPipe, CurrencyPipe, DatePipe, TitleCasePipe, RouterLink],
+  imports: [NgIf, NgFor, AsyncPipe, CurrencyPipe, DatePipe, TitleCasePipe, RouterLink, ReactiveFormsModule],
   template: `
     <div class="order-detail-page">
       <div class="order-shell" *ngIf="order$ | async as order; else loadingState">
@@ -60,7 +64,55 @@ import type { Order } from '../../shared/models/order';
               </div>
             </div>
           </section>
+          <section class="return-card" *ngIf="order.status === 'Confirmed'">
+            <div class="return-card__header">
+              <div>
+                <p class="eyebrow">Need to return?</p>
+                <h2>Request a return</h2>
+                <p>Submit a return request and our stylists will assist you.</p>
+              </div>
+              <span *ngIf="existingReturn()" class="status-pill" [attr.data-status]="existingReturn()!.status.toLowerCase()">
+                {{ existingReturn()!.status | titlecase }}
+              </span>
+            </div>
 
+            <div *ngIf="returnLoading()" class="alert muted">Checking existing return requests…</div>
+
+            <ng-container *ngIf="existingReturn(); else requestForm">
+              <p>
+                Return request <strong>#{{ existingReturn()!.id.slice(0, 8) }}</strong> is currently
+                {{ existingReturn()!.status | titlecase }}.
+              </p>
+              <p *ngIf="existingReturn()!.resolutionNotes">
+                <strong>Notes:</strong> {{ existingReturn()!.resolutionNotes }}
+              </p>
+              <p *ngIf="existingReturn()!.refundTransactionId">
+                <strong>Refund reference:</strong> {{ existingReturn()!.refundTransactionId?.slice(0, 10) }}…
+              </p>
+            </ng-container>
+
+            <ng-template #requestForm>
+              <form [formGroup]="returnForm" (ngSubmit)="submitReturn(order.id)">
+                <label>
+                  <span>Tell us about the issue</span>
+                  <textarea rows="4" formControlName="reason" placeholder="Example: Wrong size, damaged packaging"></textarea>
+                  <small *ngIf="returnForm.invalid && returnForm.touched" class="form-error">
+                    Please provide at least 10 characters.
+                  </small>
+                </label>
+                <button class="btn-gold" type="submit" [disabled]="returnForm.invalid || returnLoading()">Request return</button>
+              </form>
+            </ng-template>
+
+            <div *ngIf="returnSuccess()" class="alert success">
+              {{ returnSuccess() }}
+              <button type="button" (click)="returnSuccess.set(null)">✕</button>
+            </div>
+            <div *ngIf="returnError()" class="alert danger">
+              {{ returnError() }}
+              <button type="button" (click)="returnError.set(null)">✕</button>
+            </div>
+          </section>
           <section class="items-card">
             <div class="items-header">
               <h2>Jewelry pieces</h2>
@@ -168,9 +220,62 @@ import type { Order } from '../../shared/models/order';
       }
 
       .summary-card h2,
-      .items-card h2 {
+      .items-card h2,
+      .return-card h2 {
         margin: 0;
         color: #11172b;
+      }
+
+      .return-card {
+        grid-column: span 2;
+      }
+
+      .return-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .btn-gold {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(120deg, #fcd34d, #f59e0b);
+        color: #1f2937;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .alert {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+
+      .alert.success {
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      .alert.danger {
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+
+      .alert.muted {
+        background: #f3f4f6;
+        color: #4b5563;
+      }
+
+      .form-error {
+        color: #b91c1c;
+        font-size: 0.8rem;
       }
 
       dl {
@@ -303,22 +408,37 @@ import type { Order } from '../../shared/models/order';
         .order-header {
           flex-direction: column;
         }
+
+        .return-card {
+          grid-column: span 1;
+        }
       }
     `,
   ],
 })
 export class OrderDetailComponent implements OnInit {
   order$!: Observable<Order | null>;
+  readonly returnForm = this.fb.nonNullable.group({
+    reason: ['', [Validators.required, Validators.minLength(10)]],
+  });
+  existingReturn = signal<ReturnRequest | null>(null);
+  returnLoading = signal(false);
+  returnSuccess = signal<string | null>(null);
+  returnError = signal<string | null>(null);
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly orderService: OrderService,
-    private readonly router: Router
+    private readonly returnService: ReturnService,
+    private readonly fb: FormBuilder,
+    private readonly router: Router,
+    private readonly destroyRef: DestroyRef
   ) {}
 
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('id');
     if (orderId) {
+      this.loadReturnState(orderId);
       this.order$ = this.orderService.getOrder(orderId).pipe(
         catchError(() => {
           this.router.navigate(['/my-orders']);
@@ -328,6 +448,51 @@ export class OrderDetailComponent implements OnInit {
     } else {
       this.router.navigate(['/my-orders']);
     }
+  }
+
+  submitReturn(orderId: string): void {
+    if (this.returnForm.invalid) {
+      this.returnForm.markAllAsTouched();
+      return;
+    }
+    this.returnLoading.set(true);
+    this.returnService
+      .createReturnRequest({
+        orderId,
+        reason: this.returnForm.controls.reason.value,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (request) => {
+          this.existingReturn.set(request);
+          this.returnSuccess.set('Return request submitted successfully.');
+          this.returnError.set(null);
+          this.returnForm.reset();
+          this.returnLoading.set(false);
+        },
+        error: (error) => {
+          this.returnError.set(error.error?.detail || 'Unable to submit return request.');
+          this.returnSuccess.set(null);
+          this.returnLoading.set(false);
+        },
+      });
+  }
+
+  private loadReturnState(orderId: string): void {
+    this.returnLoading.set(true);
+    this.returnService
+      .listReturns(1, 50)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          const request = response.items.find((item) => item.orderId === orderId) ?? null;
+          this.existingReturn.set(request);
+          this.returnLoading.set(false);
+        },
+        error: () => {
+          this.returnLoading.set(false);
+        },
+      });
   }
 }
 

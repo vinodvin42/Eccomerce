@@ -333,3 +333,59 @@ events:
           type: string
     consumers:
       - notification-service
+# Return Events
+  - name: return.completed
+    version: "1.0"
+    description: "Return processed and refund issued"
+    schema:
+      $id: https://example.com/events/return.completed.json
+      type: object
+      required: [returnId, orderId, tenantId, status]
+      properties:
+        returnId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [Refunded]
+        refundAmount:
+          type: number
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+    consumers:
+      - notification-service
+      - analytics-service
+
+  - name: return.sla_breach
+    version: "1.0"
+    description: "Return request SLA threshold breached"
+    schema:
+      $id: https://example.com/events/return.sla_breach.json
+      type: object
+      required: [returnId, tenantId, orderId, slaType, elapsedHours]
+      properties:
+        returnId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        slaType:
+          type: string
+          enum: [acknowledgement, resolution]
+        elapsedHours:
+          type: number
+    consumers:
+      - notification-service
+      - analytics-service

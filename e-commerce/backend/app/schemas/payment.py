@@ -63,3 +63,14 @@ class ConfirmPaymentResponse(BaseModel):
     order_status: str = Field(alias="orderStatus")
     success: bool
 
+
+class RefundPaymentRequest(BaseModel):
+    """Request to refund a payment."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    transaction_id: UUID = Field(alias="transactionId")
+    amount: Decimal | None = Field(
+        None, description="Partial refund amount. If not provided, full refund is processed."
+    )
+    reason: str | None = Field(None, description="Reason for the refund")

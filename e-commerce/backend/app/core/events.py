@@ -269,6 +269,31 @@ def publish_product_inventory_low(
     )
 
 
+def publish_return_completed(
+    return_id: UUID,
+    order_id: UUID,
+    tenant_id: UUID,
+    refund_amount: float | None,
+    currency: str | None,
+) -> None:
+    """Publish return.completed event."""
+    event_data = {
+        "returnId": str(return_id),
+        "orderId": str(order_id),
+        "tenantId": str(tenant_id),
+        "status": "Refunded",
+    }
+    if refund_amount is not None:
+        event_data["refundAmount"] = refund_amount
+    if currency:
+        event_data["currency"] = currency
+
+    publish_event(
+        event_name="return.completed",
+        event_data=event_data,
+    )
+
+
 def publish_user_updated(
     user_id: UUID,
     tenant_id: UUID,
@@ -311,5 +336,25 @@ def publish_tenant_suspended(
         event_data={
             "tenantId": str(tenant_id),
             "reason": reason,
+        },
+    )
+
+
+def publish_return_sla_breach(
+    return_id: UUID,
+    tenant_id: UUID,
+    order_id: UUID,
+    sla_type: str,
+    elapsed_hours: float,
+) -> None:
+    """Publish return.sla_breach event."""
+    publish_event(
+        event_name="return.sla_breach",
+        event_data={
+            "returnId": str(return_id),
+            "tenantId": str(tenant_id),
+            "orderId": str(order_id),
+            "slaType": sla_type,
+            "elapsedHours": elapsed_hours,
         },
     )

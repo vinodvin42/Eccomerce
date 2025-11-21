@@ -16,7 +16,7 @@ from app.db.models.order import Order
 from app.db.models.user import User
 from app.db.session import get_session
 from app.schemas.checkout import CheckoutRequest, CheckoutResponse
-from app.schemas.order import OrderCreate, OrderRead, OrderUpdate
+from app.schemas.order import OrderCancelRequest, OrderCreate, OrderRead, OrderUpdate
 from app.schemas.payment import PaymentTransactionRead
 from app.schemas.shared import Money
 from app.services.checkout_saga import CheckoutSagaOrchestrator
@@ -133,6 +133,20 @@ async def update_order(
     """Update an existing order."""
     service = OrderService(session)
     order = await service.update_order(tenant.tenant_id, order_id, actor_id, payload)
+    return serialize_order(order)
+
+
+@router.post("/{order_id}/cancel", response_model=OrderRead)
+async def cancel_order(
+    order_id: UUID,
+    payload: OrderCancelRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+    actor_id: UUID = Depends(get_request_actor),
+    session: AsyncSession = Depends(get_session),
+):
+    """Cancel an order. Releases reserved inventory and publishes cancellation event."""
+    service = OrderService(session)
+    order = await service.cancel_order(tenant.tenant_id, order_id, actor_id, payload.reason)
     return serialize_order(order)
 
 

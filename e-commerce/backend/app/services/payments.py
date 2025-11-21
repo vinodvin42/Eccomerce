@@ -291,3 +291,89 @@ class PaymentService:
 
         return transaction
 
+    async def refund_payment(
+        self,
+        tenant_id: UUID,
+        transaction_id: UUID,
+        actor_id: UUID,
+        amount: Decimal | None = None,
+        reason: str | None = None,
+    ) -> PaymentTransaction:
+        """Refund a payment (full or partial)."""
+        transaction_result = await self.session.execute(
+            select(PaymentTransaction).where(
+                PaymentTransaction.id == transaction_id, PaymentTransaction.tenant_id == tenant_id
+            )
+        )
+        transaction = transaction_result.scalar_one_or_none()
+        if not transaction:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment transaction not found.")
+
+        if transaction.status != PaymentStatus.succeeded:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Only succeeded payments can be refunded. Current status: {transaction.status}",
+            )
+
+        # Check if already fully refunded
+        if transaction.status == PaymentStatus.refunded:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment is already fully refunded.",
+            )
+
+        # Calculate refund amount
+        refund_amount = amount if amount is not None else transaction.amount
+        if refund_amount <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refund amount must be greater than zero.",
+            )
+
+        # Check if refund amount exceeds transaction amount
+        total_refunded = transaction.refund_amount or Decimal("0")
+        if total_refunded + refund_amount > transaction.amount:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Refund amount exceeds available amount. Available: {transaction.amount - total_refunded}",
+            )
+
+        # Process refund with gateway if needed
+        if transaction.provider != PaymentProvider.manual and transaction.provider_transaction_id:
+            payment_method_result = await self.session.execute(
+                select(PaymentMethod).where(
+                    PaymentMethod.id == transaction.payment_method_id, PaymentMethod.tenant_id == tenant_id
+                )
+            )
+            payment_method = payment_method_result.scalar_one_or_none()
+
+            gateway = self._get_gateway(payment_method) if payment_method else StripeGateway()
+            result = await gateway.refund_payment(
+                transaction_id=transaction.provider_transaction_id,
+                amount=refund_amount,
+                reason=reason,
+            )
+
+            if not result.success:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Refund failed: {result.error_message}",
+                )
+
+        # Update transaction
+        total_refunded += refund_amount
+        transaction.refund_amount = total_refunded
+        transaction.refund_reason = reason or transaction.refund_reason
+
+        # Update status based on refund amount
+        if total_refunded >= transaction.amount:
+            transaction.status = PaymentStatus.refunded
+        else:
+            transaction.status = PaymentStatus.partially_refunded
+
+        transaction.modified_by = actor_id
+        await self.session.commit()
+        await self.session.refresh(transaction)
+
+        return transaction
+
