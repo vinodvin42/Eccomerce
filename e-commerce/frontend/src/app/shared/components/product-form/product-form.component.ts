@@ -1,12 +1,13 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { FormGroup, ReactiveFormsModule, FormArray, FormControl } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
 import type { Category } from '../../../shared/models/category';
+import { ImageUploadComponent } from '../image-upload/image-upload.component';
 
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgFor, NgIf],
+  imports: [ReactiveFormsModule, NgFor, NgIf, ImageUploadComponent],
   template: `
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="product-form">
       <div class="form-row">
@@ -40,11 +41,14 @@ import type { Category } from '../../../shared/models/category';
           <textarea formControlName="description" placeholder="Enter product description" rows="3"></textarea>
         </label>
       </div>
-      <div class="form-row">
+      <div class="form-row full-width">
         <label>
-          <span>Image URL</span>
-          <input formControlName="imageUrl" type="url" placeholder="https://example.com/image.jpg" />
-          <small>Enter a URL to an image for this product</small>
+          <span>Product Images</span>
+          <app-image-upload
+            [formControl]="form.get('imageUrls')!"
+            (imagesChange)="onImagesChange($event)"
+          ></app-image-upload>
+          <small>Add multiple images by URL or upload files. Supported formats: JPG, PNG, WebP, GIF (max 5MB each).</small>
         </label>
       </div>
       <div class="form-row">
@@ -272,16 +276,66 @@ import type { Category } from '../../../shared/models/category';
         background: var(--premium-silver);
         border-color: var(--premium-gold);
       }
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+
     `,
   ],
 })
-export class ProductFormComponent {
+export class ProductFormComponent implements OnInit, OnChanges {
   @Input() form!: FormGroup;
   @Input() categories: Category[] = [];
   @Input() loading = false;
   @Input() submitLabel = 'Create Product';
   @Output() submit = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
+
+  ngOnInit(): void {
+    this.syncImageUrls();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['form'] && this.form) {
+      this.syncImageUrls();
+    }
+  }
+
+  syncImageUrls(): void {
+    if (this.form) {
+      const imageUrlsValue = this.form.get('imageUrls')?.value || [];
+      const imageUrlValue = this.form.get('imageUrl')?.value || '';
+      
+      if (imageUrlsValue && imageUrlsValue.length > 0) {
+        this.form.get('imageUrls')?.setValue(imageUrlsValue);
+      } else if (imageUrlValue) {
+        this.form.get('imageUrls')?.setValue([imageUrlValue]);
+      } else {
+        this.form.get('imageUrls')?.setValue([]);
+      }
+    }
+  }
+
+  getImageUrls(): string[] {
+    const imageUrlsValue = this.form.get('imageUrls')?.value || [];
+    const imageUrlValue = this.form.get('imageUrl')?.value || '';
+    
+    if (imageUrlsValue && imageUrlsValue.length > 0) {
+      return imageUrlsValue;
+    }
+    if (imageUrlValue) {
+      return [imageUrlValue];
+    }
+    return [];
+  }
+
+  onImagesChange(urls: string[]): void {
+    this.form.patchValue({
+      imageUrls: urls,
+      imageUrl: urls.length > 0 ? urls[0] : '', // Keep first as primary for backward compatibility
+    });
+  }
 
   onSubmit() {
     if (this.form.valid) {

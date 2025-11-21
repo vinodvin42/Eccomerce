@@ -20,6 +20,7 @@ from app.api.routes import (
     returns,
     shipping_methods,
     tenants,
+    uploads,
     users,
 )
 from app.core.config import get_settings
@@ -55,6 +56,7 @@ app.include_router(shipping_methods.router)
 app.include_router(discounts.router)
 app.include_router(payments.router)
 app.include_router(returns.router)
+app.include_router(uploads.router)
 
 
 @app.get("/health", tags=["Diagnostics"])

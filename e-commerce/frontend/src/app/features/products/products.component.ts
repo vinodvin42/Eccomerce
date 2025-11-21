@@ -1,6 +1,6 @@
 import { AsyncPipe, CurrencyPipe, NgFor, NgIf } from '@angular/common';
-import { Component, DestroyRef, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, OnInit, signal, untracked } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, Observable, catchError, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 
@@ -11,11 +11,12 @@ import type { Product, ProductListResponse } from '../../shared/models/catalog';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { ProductFormComponent } from '../../shared/components/product-form/product-form.component';
 import { ProductListComponent } from '../../shared/components/product-list/product-list.component';
+import { ImageUploadComponent } from '../../shared/components/image-upload/image-upload.component';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [NgFor, NgIf, AsyncPipe, ReactiveFormsModule, CurrencyPipe, ModalComponent, ProductFormComponent, ProductListComponent],
+  imports: [NgFor, NgIf, AsyncPipe, ReactiveFormsModule, FormsModule, CurrencyPipe, ModalComponent, ProductFormComponent, ProductListComponent, ImageUploadComponent],
   template: `
     <div class="page-container">
       <!-- Header Section -->
@@ -182,10 +183,14 @@ import { ProductListComponent } from '../../shared/components/product-list/produ
               <textarea formControlName="description" placeholder="Enter product description" rows="3"></textarea>
             </label>
           </div>
-          <div class="form-row">
+          <div class="form-row full-width">
             <label>
-              <span>Image URL</span>
-              <input formControlName="imageUrl" type="url" placeholder="https://example.com/image.jpg" />
+              <span>Product Images</span>
+              <app-image-upload
+                [formControl]="editForm.get('imageUrls')!"
+                (imagesChange)="onEditImagesChange($event)"
+              ></app-image-upload>
+              <small>Add multiple images by URL or upload files. Supported formats: JPG, PNG, WebP, GIF (max 5MB each).</small>
             </label>
           </div>
           <div class="form-row">
@@ -774,7 +779,8 @@ export class ProductsComponent implements OnInit {
       name: ['', Validators.required],
       sku: ['', Validators.required],
       description: [''],
-      imageUrl: [''],
+      imageUrl: [''], // Keep for backward compatibility
+      imageUrls: [[]], // New: array of image URLs
       categoryId: [''],
       price: [0, [Validators.required, Validators.min(0.01)]],
       inventory: [0, [Validators.required, Validators.min(0)]],
@@ -812,7 +818,8 @@ export class ProductsComponent implements OnInit {
       description: [''],
       price: [0, [Validators.required, Validators.min(0.01)]],
       inventory: [0, [Validators.required, Validators.min(0)]],
-      imageUrl: [''],
+      imageUrl: [''], // Keep for backward compatibility
+      imageUrls: [[]], // New: array of image URLs
       categoryId: [''],
       // Jewelry-specific fields
       weight: [null, Validators.min(0)],
@@ -854,25 +861,33 @@ export class ProductsComponent implements OnInit {
       this.refreshTrigger$,
     ]).pipe(
       tap(() => {
-        this.loading.set(true);
-        this.error.set(null);
+        untracked(() => {
+          this.loading.set(true);
+          this.error.set(null);
+        });
       }),
       switchMap(([term, categoryId, stockFilter, page, pageSize, _refresh]) => {
-        this.searchTerm.set(term || '');
+        untracked(() => {
+          this.searchTerm.set(term || '');
+        });
         return this.catalogService.listProducts(page, pageSize, term).pipe(
           map((response) => this.applyProductFilters(response, categoryId, stockFilter)),
           catchError((err) => {
-            this.error.set(err.error?.detail || 'Failed to load products');
+            untracked(() => {
+              this.error.set(err.error?.detail || 'Failed to load products');
+            });
             return of({ items: [], total: 0, page, pageSize });
           })
         );
       }),
       tap((response) => {
-        this.loading.set(false);
-        this.totalProducts.set(response.total);
-        if (this.page() !== response.page) {
-          this.page.set(response.page);
-        }
+        untracked(() => {
+          this.loading.set(false);
+          this.totalProducts.set(response.total);
+          if (this.page() !== response.page) {
+            this.page.set(response.page);
+          }
+        });
       }),
       shareReplay({ bufferSize: 1, refCount: true })
     );
@@ -966,7 +981,8 @@ export class ProductsComponent implements OnInit {
         name: this.form.value.name,
         sku: this.form.value.sku,
         description: this.form.value.description || undefined,
-        imageUrl: this.form.value.imageUrl || undefined,
+        imageUrl: this.form.value.imageUrl || undefined, // Keep for backward compatibility
+        imageUrls: this.form.value.imageUrls && this.form.value.imageUrls.length > 0 ? this.form.value.imageUrls.filter((url: string) => url.trim() !== '') : undefined,
         categoryId: this.form.value.categoryId || undefined,
         price: { currency: 'INR', amount: this.form.value.price },
         inventory: this.form.value.inventory,
@@ -1027,7 +1043,8 @@ export class ProductsComponent implements OnInit {
       name: product.name,
       sku: product.sku,
       description: product.description || '',
-      imageUrl: product.imageUrl || '',
+      imageUrl: product.imageUrl || '', // Keep for backward compatibility
+      imageUrls: product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []),
       categoryId: product.categoryId || '',
       price: product.price.amount,
       inventory: product.inventory,
@@ -1062,6 +1079,26 @@ export class ProductsComponent implements OnInit {
     this.editForm.reset();
   }
 
+  getEditImageUrls(): string[] {
+    const imageUrlsValue = this.editForm.get('imageUrls')?.value || [];
+    const imageUrlValue = this.editForm.get('imageUrl')?.value || '';
+    
+    if (imageUrlsValue && imageUrlsValue.length > 0) {
+      return imageUrlsValue;
+    }
+    if (imageUrlValue) {
+      return [imageUrlValue];
+    }
+    return [];
+  }
+
+  onEditImagesChange(urls: string[]): void {
+    this.editForm.patchValue({
+      imageUrls: urls,
+      imageUrl: urls.length > 0 ? urls[0] : '', // Keep first as primary for backward compatibility
+    });
+  }
+
   updateProduct(productId: string): void {
     if (this.editForm.invalid) {
       Object.keys(this.editForm.controls).forEach((key) => {
@@ -1076,7 +1113,8 @@ export class ProductsComponent implements OnInit {
         name: this.editForm.value.name,
         sku: this.editForm.value.sku,
         description: this.editForm.value.description || undefined,
-        imageUrl: this.editForm.value.imageUrl || undefined,
+        imageUrl: this.editForm.value.imageUrl || undefined, // Keep for backward compatibility
+        imageUrls: this.editForm.value.imageUrls && this.editForm.value.imageUrls.length > 0 ? this.editForm.value.imageUrls.filter((url: string) => url.trim() !== '') : undefined,
         categoryId: this.editForm.value.categoryId || undefined,
         price: { currency: 'INR', amount: this.editForm.value.price },
         inventory: this.editForm.value.inventory,
@@ -1159,21 +1197,27 @@ export class ProductsComponent implements OnInit {
   }
 
   private loadCategories(): void {
-    this.categoriesLoading.set(true);
-    this.categoriesError.set(null);
+    untracked(() => {
+      this.categoriesLoading.set(true);
+      this.categoriesError.set(null);
+    });
     this.categoryService
       .listCategories(true)
       .pipe(
         map((response) => response.items),
         catchError((err) => {
-          this.categoriesError.set(err.error?.detail || 'Failed to load categories');
+          untracked(() => {
+            this.categoriesError.set(err.error?.detail || 'Failed to load categories');
+          });
           return of([]);
         }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((items) => {
-        this.categories.set(items);
-        this.categoriesLoading.set(false);
+        untracked(() => {
+          this.categories.set(items);
+          this.categoriesLoading.set(false);
+        });
       });
   }
 }

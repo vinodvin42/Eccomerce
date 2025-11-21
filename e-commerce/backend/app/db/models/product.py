@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,11 +16,11 @@ class Product(TenantMixin, AuditMixin, Base):
 
     name: Mapped[str] = mapped_column(String(length=255), nullable=False)
     sku: Mapped[str] = mapped_column(String(length=64), nullable=False, unique=True, index=True)
-    description: Mapped[str | None] = mapped_column(String(length=2000), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text(), nullable=True)
     price_currency: Mapped[str] = mapped_column(String(length=3), nullable=False)
     price_amount: Mapped[Numeric] = mapped_column(Numeric(12, 2), nullable=False)
     inventory: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    image_url: Mapped[str | None] = mapped_column(String(length=500), nullable=True)
+    image_url: Mapped[str | None] = mapped_column(Text(), nullable=True)
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True, index=True
     )

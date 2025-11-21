@@ -1,4 +1,4 @@
 """Expose route modules."""
 
-from . import orders, products, tenants  # noqa: F401
+from . import orders, products, tenants, uploads  # noqa: F401
 

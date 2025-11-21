@@ -17,7 +17,8 @@ export interface Product {
   description?: string;
   price: Money;
   inventory: number;
-  imageUrl?: string;
+  imageUrl?: string; // Keep for backward compatibility
+  imageUrls?: string[]; // New: array of image URLs
   categoryId?: string;
   tenantId: string;
   // Jewelry-specific fields
@@ -62,7 +63,8 @@ export interface ProductCreateRequest {
   price: Money;
   inventory: number;
   description?: string;
-  imageUrl?: string;
+  imageUrl?: string; // Keep for backward compatibility
+  imageUrls?: string[]; // New: array of image URLs
   categoryId?: string;
   // Jewelry-specific fields
   weight?: number;

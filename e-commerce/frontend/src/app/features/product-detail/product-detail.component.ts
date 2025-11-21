@@ -1,5 +1,5 @@
-import { AsyncPipe, CurrencyPipe, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { AsyncPipe, CurrencyPipe, NgFor, NgIf } from '@angular/common';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -18,7 +18,7 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [NgIf, AsyncPipe, CurrencyPipe, RouterLink, FormsModule],
+  imports: [NgIf, NgFor, AsyncPipe, CurrencyPipe, RouterLink, FormsModule],
   template: `
     <div class="page-container-narrow">
       <ng-container *ngIf="product$ | async as product; else loadingState">
@@ -34,15 +34,56 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
           <div class="product-main">
             <section class="product-card">
               <div class="product-image-section">
-                <div class="product-image-frame">
-                  <img
-                    *ngIf="product.imageUrl && !imageError"
-                    [src]="product.imageUrl"
-                    [alt]="product.name"
-                    (error)="onImageError()"
-                  />
-                  <div class="image-placeholder" *ngIf="!product.imageUrl || imageError">
-                    <span class="image-icon">{{ product.name.charAt(0) }}</span>
+                <div class="product-image-gallery">
+                  <div class="main-image-container" (click)="openZoomView()">
+                    <button 
+                      *ngIf="getAllImages(product).length > 1 && selectedImageIndex > 0"
+                      type="button"
+                      class="nav-button nav-prev"
+                      (click)="previousImageInZoom($event, product)"
+                      title="Previous image"
+                    >
+                      ‹
+                    </button>
+                    <div class="main-image-wrapper">
+                      <img
+                        *ngIf="getMainImage(product) && !imageError"
+                        [src]="getMainImage(product)"
+                        [alt]="product.name"
+                        (error)="onImageError()"
+                        class="main-image"
+                        [class.zoom-enabled]="getAllImages(product).length > 0"
+                      />
+                      <div class="image-placeholder" *ngIf="!getMainImage(product) || imageError">
+                        <span class="image-icon">{{ product.name.charAt(0) }}</span>
+                      </div>
+                      <div class="zoom-hint" *ngIf="getAllImages(product).length > 0 && !imageError">
+                        <span>🔍 Click to zoom</span>
+                      </div>
+                    </div>
+                    <button 
+                      *ngIf="getAllImages(product).length > 1 && selectedImageIndex < getAllImages(product).length - 1"
+                      type="button"
+                      class="nav-button nav-next"
+                      (click)="nextImageInZoom($event, product)"
+                      title="Next image"
+                    >
+                      ›
+                    </button>
+                    <div class="image-counter" *ngIf="getAllImages(product).length > 1">
+                      {{ selectedImageIndex + 1 }} / {{ getAllImages(product).length }}
+                    </div>
+                  </div>
+                  <div class="image-thumbnails" *ngIf="getAllImages(product).length > 1">
+                    <button
+                      *ngFor="let img of getAllImages(product); let i = index"
+                      type="button"
+                      class="thumbnail"
+                      [class.active]="selectedImageIndex === i"
+                      (click)="selectImage(i)"
+                    >
+                      <img [src]="img" [alt]="product.name + ' - Image ' + (i + 1)" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -193,6 +234,52 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
             </div>
           </aside>
         </div>
+        
+        <!-- Zoom Modal - Full screen overlay -->
+        <div class="zoom-modal" *ngIf="zoomOpen" (click)="closeZoomView()" (keydown)="handleZoomKeyboard($event, product)">
+          <button class="zoom-close" (click)="closeZoomView()" title="Close (ESC)">×</button>
+          <div class="zoom-content" (click)="$event.stopPropagation()">
+            <button 
+              *ngIf="getAllImages(product).length > 1 && selectedImageIndex > 0"
+              type="button"
+              class="zoom-nav zoom-prev"
+              (click)="previousImageInZoom($event, product)"
+              title="Previous image"
+            >
+              ‹
+            </button>
+            <div class="zoom-image-wrapper">
+              <img
+                [src]="getMainImage(product)"
+                [alt]="product.name"
+                class="zoom-image"
+              />
+              <div class="zoom-counter" *ngIf="getAllImages(product).length > 1">
+                {{ selectedImageIndex + 1 }} / {{ getAllImages(product).length }}
+              </div>
+            </div>
+            <button 
+              *ngIf="getAllImages(product).length > 1 && selectedImageIndex < getAllImages(product).length - 1"
+              type="button"
+              class="zoom-nav zoom-next"
+              (click)="nextImageInZoom($event, product)"
+              title="Next image"
+            >
+              ›
+            </button>
+            <div class="zoom-thumbnails" *ngIf="getAllImages(product).length > 1">
+              <button
+                *ngFor="let img of getAllImages(product); let i = index"
+                type="button"
+                class="zoom-thumbnail"
+                [class.active]="selectedImageIndex === i"
+                (click)="selectImage(i)"
+              >
+                <img [src]="img" [alt]="product.name + ' - Image ' + (i + 1)" />
+              </button>
+            </div>
+          </div>
+        </div>
       </ng-container>
 
       <ng-template #loadingState>
@@ -242,21 +329,109 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
       .product-image-section {
         margin-bottom: 1.5rem;
       }
-      .product-image-frame {
+      .product-image-gallery {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .main-image-container {
         width: 100%;
         height: 500px;
-        border: 1px solid #e3e6e6;
-        border-radius: 8px;
+        border: 1px solid var(--premium-silver);
+        border-radius: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #fafafa;
+        background: var(--premium-moonstone);
         overflow: hidden;
+        box-shadow: 0 10px 30px var(--premium-shadow);
+        position: relative;
+        cursor: pointer;
       }
-      .product-image-frame img {
+      .main-image-wrapper {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .main-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: opacity 0.3s ease;
+      }
+      .main-image.zoom-enabled {
+        cursor: zoom-in;
+      }
+      .zoom-hint {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+      }
+      .main-image-container:hover .zoom-hint {
+        opacity: 1;
+      }
+      .nav-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        font-weight: 300;
+        line-height: 1;
+        color: var(--premium-onyx);
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        padding: 0;
+        margin: 0;
+      }
+      .nav-button:hover {
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        transform: translateY(-50%) scale(1.1);
+      }
+      .nav-button:active {
+        transform: translateY(-50%) scale(0.95);
+      }
+      .nav-prev {
+        left: 1rem;
+      }
+      .nav-next {
+        right: 1rem;
+      }
+      .image-counter {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        z-index: 10;
+        white-space: nowrap;
       }
       .image-placeholder {
         width: 100%;
@@ -264,11 +439,44 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #aeb1b5;
+        color: var(--premium-titanium);
       }
       .image-icon {
         font-size: 4rem;
         font-weight: 600;
+      }
+      .image-thumbnails {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .thumbnail {
+        width: 80px;
+        height: 80px;
+        border: 2px solid var(--premium-silver);
+        border-radius: 0.5rem;
+        padding: 0;
+        background: var(--premium-moonstone);
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+      .thumbnail:hover {
+        border-color: var(--premium-gold);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+      }
+      .thumbnail.active {
+        border-color: var(--premium-rose-gold);
+        border-width: 3px;
+        box-shadow: 0 0 0 2px rgba(183, 110, 121, 0.2);
+      }
+      .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       .product-details {
         display: flex;
@@ -545,6 +753,153 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
         padding: 5rem 1rem;
         color: #9ca3af;
       }
+      /* Zoom Modal Styles */
+      .zoom-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .zoom-close {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        font-size: 2rem;
+        font-weight: 300;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        z-index: 10000;
+        padding: 0;
+        margin: 0;
+      }
+      .zoom-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.1);
+      }
+      .zoom-content {
+        position: relative;
+        width: 90%;
+        max-width: 1200px;
+        height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+      }
+      .zoom-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .zoom-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      .zoom-counter {
+        position: absolute;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .zoom-nav {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        width: 4rem;
+        height: 4rem;
+        border-radius: 50%;
+        font-size: 2.5rem;
+        font-weight: 300;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        padding: 0;
+        margin: 0;
+      }
+      .zoom-nav:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.1);
+      }
+      .zoom-thumbnails {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.75rem;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 1rem;
+        border-radius: 1rem;
+        backdrop-filter: blur(10px);
+      }
+      .zoom-thumbnail {
+        width: 60px;
+        height: 60px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.5rem;
+        padding: 0;
+        background: rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.2s ease;
+      }
+      .zoom-thumbnail:hover {
+        border-color: rgba(255, 255, 255, 0.6);
+        transform: scale(1.1);
+      }
+      .zoom-thumbnail.active {
+        border-color: var(--premium-gold);
+        border-width: 3px;
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+      }
+      .zoom-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
       @media (max-width: 960px) {
         .product-grid {
           grid-template-columns: 1fr;
@@ -552,8 +907,52 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
         .action-panel {
           position: static;
         }
-        .product-image-frame {
+        .main-image-container {
           height: 400px;
+        }
+        .thumbnail {
+          width: 60px;
+          height: 60px;
+        }
+        .nav-button {
+          width: 2.5rem;
+          height: 2.5rem;
+          font-size: 1.5rem;
+          line-height: 1;
+        }
+        .nav-prev {
+          left: 0.5rem;
+        }
+        .nav-next {
+          right: 0.5rem;
+        }
+        .zoom-content {
+          width: 95%;
+          height: 95vh;
+          gap: 1rem;
+        }
+        .zoom-nav {
+          width: 3rem;
+          height: 3rem;
+          font-size: 2rem;
+          line-height: 1;
+        }
+        .zoom-thumbnails {
+          bottom: 1rem;
+          padding: 0.75rem;
+          gap: 0.5rem;
+        }
+        .zoom-thumbnail {
+          width: 50px;
+          height: 50px;
+        }
+        .zoom-close {
+          top: 1rem;
+          right: 1rem;
+          width: 2.5rem;
+          height: 2.5rem;
+          font-size: 1.75rem;
+          line-height: 1;
         }
       }
     `,
@@ -564,6 +963,8 @@ export class ProductDetailComponent implements OnInit {
   quantity = 1;
   categoryName = 'All Collections';
   imageError = false;
+  selectedImageIndex = 0;
+  zoomOpen = false;
   tenantBrand$ = this.brandingService.tenantBrandChanges$;
 
   constructor(
@@ -658,6 +1059,88 @@ export class ProductDetailComponent implements OnInit {
 
   onImageError(): void {
     this.imageError = true;
+  }
+
+  getAllImages(product: Product): string[] {
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls;
+    }
+    if (product.imageUrl) {
+      return [product.imageUrl];
+    }
+    return [];
+  }
+
+  getMainImage(product: Product): string | undefined {
+    const images = this.getAllImages(product);
+    if (images.length > 0 && this.selectedImageIndex < images.length) {
+      return images[this.selectedImageIndex];
+    }
+    return images[0];
+  }
+
+  selectImage(index: number): void {
+    this.selectedImageIndex = index;
+    this.imageError = false;
+  }
+
+
+  openZoomView(): void {
+    this.zoomOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeZoomView(): void {
+    this.zoomOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  nextImageInZoom(event: Event, product: Product): void {
+    event.stopPropagation();
+    const images = this.getAllImages(product);
+    if (this.selectedImageIndex < images.length - 1) {
+      this.selectedImageIndex++;
+      this.imageError = false;
+    }
+  }
+
+  previousImageInZoom(event: Event, product: Product): void {
+    event.stopPropagation();
+    if (this.selectedImageIndex > 0) {
+      this.selectedImageIndex--;
+      this.imageError = false;
+    }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboard(event: KeyboardEvent): void {
+    if (!this.zoomOpen) {
+      return;
+    }
+    
+    // Get product from observable - we'll need to handle this differently
+    // For now, just handle ESC key
+    if (event.key === 'Escape') {
+      this.closeZoomView();
+    }
+  }
+
+  handleZoomKeyboard(event: KeyboardEvent, product: Product): void {
+    if (!this.zoomOpen) {
+      return;
+    }
+    
+    const images = this.getAllImages(product);
+    
+    if (event.key === 'Escape') {
+      this.closeZoomView();
+    } else if (event.key === 'ArrowLeft' && this.selectedImageIndex > 0) {
+      this.selectedImageIndex--;
+      this.imageError = false;
+    } else if (event.key === 'ArrowRight' && this.selectedImageIndex < images.length - 1) {
+      this.selectedImageIndex++;
+      this.imageError = false;
+    }
   }
 
   getFormattedDescription(description: string): SafeHtml {

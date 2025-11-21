@@ -174,13 +174,13 @@ interface AvailabilityOption {
                 <div class="product-card__image-wrapper" (click)="viewProduct(product.id)">
                 <div class="product-card__image">
                   <img
-                    *ngIf="product.imageUrl"
-                    [src]="product.imageUrl"
+                    *ngIf="getProductImage(product)"
+                    [src]="getProductImage(product)"
                     [alt]="product.name"
                     class="product-image"
                     (error)="$event.target.style.display='none'; $event.target.nextElementSibling.style.display='flex'"
                   />
-                  <div class="image-placeholder" [style.display]="product.imageUrl ? 'none' : 'flex'">
+                  <div class="image-placeholder" [style.display]="getProductImage(product) ? 'none' : 'flex'">
                     <span class="placeholder-icon">💍</span>
                     </div>
                     <div class="product-overlay">
@@ -1352,7 +1352,7 @@ export class StoreComponent implements OnInit, OnDestroy {
           name: product.name,
           price: finalPrice,
           quantity: 1,
-          imageUrl: product.imageUrl,
+          imageUrl: this.getProductImage(product) || product.imageUrl,
           sku: product.sku,
           inventory: product.inventory, // Store inventory
           priceBreakdown: {
@@ -1372,6 +1372,13 @@ export class StoreComponent implements OnInit, OnDestroy {
 
   viewProduct(productId: string): void {
     this.router.navigate(['/store/product', productId]);
+  }
+
+  getProductImage(product: Product): string | undefined {
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls[0];
+    }
+    return product.imageUrl;
   }
 
   clearFilters(): void {

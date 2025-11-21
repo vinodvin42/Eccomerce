@@ -19,6 +19,7 @@ class ProductBase(BaseModel):
     price: Money
     inventory: int = Field(ge=0)
     image_url: Optional[str] = Field(default=None, alias="imageUrl")
+    image_urls: Optional[List[str]] = Field(default=None, alias="imageUrls")
     category_id: Optional[UUID] = Field(default=None, alias="categoryId")
     
     # Jewelry-specific fields
@@ -64,6 +65,7 @@ class ProductUpdate(BaseModel):
     price: Optional[Money] = None
     inventory: Optional[int] = Field(default=None, ge=0)
     image_url: Optional[str] = Field(default=None, alias="imageUrl")
+    image_urls: Optional[List[str]] = Field(default=None, alias="imageUrls")
     category_id: Optional[UUID] = Field(default=None, alias="categoryId")
     
     # Jewelry-specific fields

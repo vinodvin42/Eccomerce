@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -77,6 +78,24 @@ async def update_product(
 
 
 def serialize_product(product: Product) -> ProductRead:
+    # Derive imageUrls from image_url if needed
+    # image_url stores JSON array string when multiple images are provided
+    image_urls = None
+    if product.image_url:
+        # Check if image_url is a JSON array string
+        if product.image_url.startswith('[') and product.image_url.endswith(']'):
+            try:
+                image_urls = json.loads(product.image_url)
+            except json.JSONDecodeError:
+                # If JSON parsing fails, treat as single URL
+                image_urls = [product.image_url]
+        # Check if it's comma-separated (for backward compatibility)
+        elif ',' in product.image_url and not product.image_url.startswith('data:'):
+            image_urls = [url.strip() for url in product.image_url.split(',') if url.strip()]
+        else:
+            # Single image URL - create array with it
+            image_urls = [product.image_url]
+    
     return ProductRead(
         id=product.id,
         name=product.name,
@@ -84,7 +103,8 @@ def serialize_product(product: Product) -> ProductRead:
         description=product.description,
         price=Money(currency=product.price_currency, amount=float(product.price_amount)),
         inventory=product.inventory,
-        image_url=product.image_url,
+        image_url=product.image_url,  # Keep for backward compatibility
+        image_urls=image_urls,  # Array of image URLs
         category_id=product.category_id,
         tenant_id=product.tenant_id,
         weight=float(product.weight) if product.weight else None,

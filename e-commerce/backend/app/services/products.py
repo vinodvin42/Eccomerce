@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from decimal import Decimal
 from typing import Sequence
 from uuid import UUID
@@ -78,6 +79,13 @@ class ProductService:
                 detail=f"Product with SKU '{payload.sku}' already exists",
             )
 
+        # Handle imageUrls: store as JSON string in image_url, or use image_url if provided
+        image_url_value = None
+        if payload.image_urls and len(payload.image_urls) > 0:
+            image_url_value = json.dumps(payload.image_urls)
+        elif payload.image_url:
+            image_url_value = payload.image_url
+        
         product = Product(
             tenant_id=tenant_id,
             name=payload.name,
@@ -86,7 +94,7 @@ class ProductService:
             price_currency=payload.price.currency,
             price_amount=payload.price.amount,
             inventory=payload.inventory,
-            image_url=payload.image_url,
+            image_url=image_url_value,
             category_id=payload.category_id,
             weight=Decimal(str(payload.weight)) if payload.weight else None,
             material=payload.material,
@@ -188,7 +196,13 @@ class ProductService:
             product.price_amount = payload.price.amount
         if payload.inventory is not None:
             product.inventory = payload.inventory
-        if payload.image_url is not None:
+        # Handle imageUrls: store as JSON string in image_url, or use image_url if provided
+        if payload.image_urls is not None:
+            if len(payload.image_urls) > 0:
+                product.image_url = json.dumps(payload.image_urls)
+            else:
+                product.image_url = None
+        elif payload.image_url is not None:
             product.image_url = payload.image_url
         if payload.category_id is not None:
             product.category_id = payload.category_id
