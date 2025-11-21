@@ -127,7 +127,8 @@ export class CheckoutSummaryComponent {
   @Input() totalCurrency: string = 'INR';
 
   totalItem = computed(() => {
-    if (this.total !== undefined) {
+    // Use provided total if it's a number (including 0)
+    if (typeof this.total === 'number') {
       return { label: 'Total', value: this.total, currency: this.totalCurrency, isTotal: true };
     }
     // Calculate total from items if not provided

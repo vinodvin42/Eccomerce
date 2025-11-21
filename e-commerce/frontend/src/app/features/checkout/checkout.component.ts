@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { Observable, catchError, combineLatest, map, of, take } from 'rxjs';
+import { Observable, catchError, combineLatest, map, of, startWith, take } from 'rxjs';
 
 import { CartActions } from '../../state/cart/cart.actions';
 import { selectCartItems, selectCartTotal } from '../../state/cart/cart.selectors';
@@ -1036,8 +1036,8 @@ export class CheckoutComponent implements OnInit {
     this.finalTotal$ = combineLatest([
       this.cartItems$,
       this.cartTotal$,
-      toObservable(this.appliedDiscount).pipe(map(d => d || null)),
-      toObservable(this.selectedShippingMethod).pipe(map(s => s || null)),
+      toObservable(this.appliedDiscount).pipe(startWith(null)),
+      toObservable(this.selectedShippingMethod).pipe(startWith(null)),
     ]).pipe(
       map(([cartItems, cartTotal, discount, shipping]) => {
         if (!cartItems || cartItems.length === 0) return 0;
