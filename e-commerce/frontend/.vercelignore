@@ -1,0 +1,10 @@
+node_modules
+.angular
+dist
+.vscode
+.idea
+*.log
+.DS_Store
+coverage
+.nyc_output
+
