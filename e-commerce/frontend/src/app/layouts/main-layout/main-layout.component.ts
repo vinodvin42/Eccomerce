@@ -166,20 +166,6 @@ import { AuthService } from '../../core/services/auth.service';
         cursor: pointer;
         transition: all 0.2s;
       }
-      .btn-link {
-        padding: 0.5rem 1rem;
-        background: var(--premium-moonstone);
-        border: 1px solid var(--premium-silver);
-        border-radius: 0.5rem;
-        color: var(--premium-onyx);
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s;
-      }
-      .btn-link:hover {
-        background: var(--premium-silver);
-        border-color: var(--premium-gold);
-      }
       .btn-cart {
         position: relative;
         padding: 0.5rem 1rem;

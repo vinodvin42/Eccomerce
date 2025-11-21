@@ -657,24 +657,6 @@ interface DiscountViewModel {
   `,
   styles: [
     `
-      .panel {
-        background: #fff;
-        padding: 1.5rem;
-        border-radius: 1rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
-        border: 1px solid var(--premium-silver);
-      }
-      .panel__header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      .panel__header h2 {
-        color: var(--premium-onyx);
-      }
       .header-actions {
         display: flex;
         gap: 0.75rem;

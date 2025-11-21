@@ -180,34 +180,12 @@ import { AuthService } from '../../../core/services/auth.service';
         font-size: 0.85rem;
         color: #b42318;
       }
-      .alert-error {
-        padding: 0.85rem;
-        background: rgba(231, 70, 70, 0.12);
-        border: 1px solid rgba(231, 70, 70, 0.4);
-        border-radius: 12px;
-        color: #b42318;
-        font-size: 0.9rem;
-      }
-      .btn-primary {
+      .login-form .btn-primary {
         width: 100%;
         padding: 0.95rem;
         border-radius: 999px;
-        border: none;
-        background: linear-gradient(120deg, #d4af37, #b76e79);
-        color: #fff;
         font-size: 1rem;
         font-weight: 700;
-        cursor: pointer;
-        box-shadow: 0 12px 30px rgba(183, 110, 121, 0.25);
-        transition: transform 0.2s, opacity 0.2s;
-      }
-      .btn-primary:hover:not(:disabled) {
-        transform: translateY(-1px);
-        opacity: 0.95;
-      }
-      .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
       }
       .panel-footer {
         text-align: center;

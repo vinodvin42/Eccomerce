@@ -42,3 +42,14 @@ export interface UpdateUserRequest {
   mfa_enabled?: boolean;
 }
 
+export interface UserProfile {
+  phone?: string;
+  alternatePhone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+}
+

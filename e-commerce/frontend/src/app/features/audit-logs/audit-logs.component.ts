@@ -90,29 +90,6 @@ import type { AuditLog, AuditLogListResponse } from '../../shared/models/audit';
   `,
   styles: [
     `
-      .panel {
-        background: #fff;
-        padding: 1.5rem;
-        border-radius: 1rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
-        border: 1px solid var(--premium-silver);
-      }
-      .panel__header {
-        margin-bottom: 1rem;
-      }
-      .panel__header h2 {
-        color: var(--premium-onyx);
-      }
-      .panel__header p {
-        color: var(--premium-titanium);
-      }
-      .filters {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        align-items: center;
-      }
       select {
         padding: 0.5rem;
         border-radius: 0.5rem;

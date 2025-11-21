@@ -31,7 +31,7 @@ import type { User } from '../../shared/models/user';
   standalone: true,
   imports: [ReactiveFormsModule, NgFor, NgIf, AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, ModalComponent],
   template: `
-    <div class="orders-page">
+    <div class="page-container-wide">
       <!-- Header -->
       <header class="page-hero">
         <div>
@@ -603,11 +603,6 @@ import type { User } from '../../shared/models/user';
   `,
   styles: [
     `
-      .orders-page {
-        padding: 2rem;
-        max-width: 1600px;
-        margin: 0 auto;
-      }
 
       .page-hero {
         display: flex;
@@ -668,52 +663,12 @@ import type { User } from '../../shared/models/user';
         color: inherit;
       }
 
-      .insights-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-      }
-
-      .insight-card {
-        background: #ffffff;
-        border-radius: 1rem;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-        border: 1px solid rgba(15, 23, 42, 0.06);
-      }
-
-      .insight-card p {
-        margin: 0;
-        font-size: 0.85rem;
-        color: var(--premium-titanium);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .insight-card h3 {
-        margin: 0.35rem 0;
-        font-size: 1.9rem;
-        color: var(--premium-onyx);
-      }
-
-      .insight-card small {
-        color: #94a3b8;
-      }
 
       .insight-card.highlight {
         background: linear-gradient(135deg, #fef3c7, #fde68a);
         border: none;
       }
 
-      .panel {
-        background: #fff;
-        border-radius: 1rem;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
-        border: 1px solid var(--premium-silver);
-      }
 
       .create-order-panel {
         border: 2px solid var(--premium-rose-gold);
@@ -745,45 +700,10 @@ import type { User } from '../../shared/models/user';
         padding-bottom: 0.5rem;
       }
 
-      .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-      }
-
       .form-row-full {
         display: grid;
         grid-template-columns: 1fr;
         gap: 1.5rem;
-      }
-
-      .form-row label,
-      .form-row-full label {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .form-row label span,
-      .form-row-full label span {
-        font-weight: 600;
-        color: var(--premium-onyx);
-        font-size: 0.875rem;
-      }
-
-      .form-row input,
-      .form-row textarea,
-      .form-row-full input,
-      .form-row-full textarea {
-        padding: 0.75rem;
-        border: 1px solid var(--premium-silver);
-        border-radius: 0.5rem;
-        background: #fff;
-        color: var(--premium-onyx);
-        font-size: 1rem;
-        transition: all 0.2s;
-        font-family: inherit;
-        resize: vertical;
       }
 
       .shipping-textarea {
@@ -792,8 +712,6 @@ import type { User } from '../../shared/models/user';
         line-height: 1.5;
       }
 
-      .form-row input:focus,
-      .form-row textarea:focus,
       .form-row-full input:focus,
       .form-row-full textarea:focus {
         outline: none;
@@ -801,7 +719,6 @@ import type { User } from '../../shared/models/user';
         box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
       }
 
-      .form-row small,
       .form-row-full small {
         color: #ef4444;
         font-size: 0.75rem;
@@ -1051,26 +968,6 @@ import type { User } from '../../shared/models/user';
         margin-top: 1rem;
       }
 
-      .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-      }
-
-      .panel-header h2 {
-        margin: 0 0 0.25rem 0;
-        font-size: 1.5rem;
-        color: var(--premium-onyx);
-      }
-
-      .panel-subtitle {
-        margin: 0;
-        color: var(--premium-titanium);
-        font-size: 0.875rem;
-      }
 
       .filters-container {
         display: flex;
@@ -1135,92 +1032,6 @@ import type { User } from '../../shared/models/user';
         box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
       }
 
-      .loading-state,
-      .error-state,
-      .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-      }
-
-      .spinner {
-        width: 48px;
-        height: 48px;
-        border: 4px solid #1e293b;
-        border-top-color: #38bdf8;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1rem;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .error-state {
-        color: #ef4444;
-      }
-
-      .error-icon {
-        font-size: 3rem;
-        display: block;
-        margin-bottom: 1rem;
-      }
-
-      .empty-icon {
-        font-size: 4rem;
-        opacity: 0.5;
-        margin-bottom: 1rem;
-      }
-
-      .empty-state h3 {
-        margin: 0 0 0.5rem 0;
-        color: #f8fafc;
-      }
-
-      .empty-state p {
-        margin: 0 0 1.5rem 0;
-        color: #94a3b8;
-      }
-
-      .table-container {
-        overflow-x: auto;
-      }
-
-      .orders-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .orders-table thead {
-        background: var(--premium-moonstone);
-      }
-
-      .orders-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--premium-titanium);
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 2px solid var(--premium-silver);
-      }
-
-      .orders-table td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--premium-silver);
-        color: var(--premium-onyx);
-      }
-
-      .order-row {
-        transition: background 0.2s;
-      }
-
-      .order-row:hover {
-        background: var(--premium-moonstone);
-      }
 
       .btn-edit {
         background: #475569;
@@ -1337,46 +1148,6 @@ import type { User } from '../../shared/models/user';
         cursor: not-allowed;
       }
 
-      .btn-primary,
-      .btn-secondary {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .btn-primary {
-        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
-        color: #fff;
-        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
-      }
-
-      .btn-primary:hover:not(:disabled) {
-        opacity: 0.9;
-        transform: translateY(-2px);
-        box-shadow: 0 12px 35px rgba(183, 110, 121, 0.4);
-      }
-
-      .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .btn-secondary {
-        background: var(--premium-moonstone);
-        color: var(--premium-onyx);
-        border: 1px solid var(--premium-silver);
-      }
-
-      .btn-secondary:hover {
-        background: var(--premium-silver);
-        border-color: var(--premium-gold);
-      }
 
       .success-message {
         position: fixed;

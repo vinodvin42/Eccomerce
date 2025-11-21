@@ -255,12 +255,6 @@ import type { ReturnRequest, ReturnStatus } from '../../shared/models/returns';
   `,
   styles: [
     `
-      .returns-page {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 2rem;
-      }
       .page-hero {
         display: flex;
         align-items: center;
@@ -277,27 +271,6 @@ import type { ReturnRequest, ReturnStatus } from '../../shared/models/returns';
         color: #a16207;
         margin: 0 0 0.5rem 0;
         font-weight: 600;
-      }
-      .btn-primary,
-      .btn-secondary,
-      .btn-danger {
-        border: none;
-        border-radius: 999px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .btn-primary {
-        background: linear-gradient(120deg, #d97706, #f59e0b);
-        color: #fff;
-      }
-      .btn-secondary {
-        background: #f3f4f6;
-        color: #111827;
-      }
-      .btn-danger {
-        background: #fee2e2;
-        color: #b91c1c;
       }
       .alerts .alert {
         padding: 0.75rem 1rem;

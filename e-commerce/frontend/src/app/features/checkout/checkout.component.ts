@@ -23,13 +23,15 @@ import type { ApplyDiscountResponse } from '../../shared/models/discount';
 import { CatalogService } from '../../core/services/catalog.service';
 import { calculateProductPrice } from '../../core/utils/price-calculator';
 import type { Product } from '../../shared/models/catalog';
+import { CartItemsComponent } from '../../shared/components/cart-items/cart-items.component';
+import { CheckoutSummaryComponent, type SummaryItem } from '../../shared/components/checkout-summary/checkout-summary.component';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [NgFor, NgIf, AsyncPipe, CurrencyPipe, ReactiveFormsModule, FormsModule, RouterLink],
+  imports: [NgFor, NgIf, AsyncPipe, CurrencyPipe, ReactiveFormsModule, FormsModule, RouterLink, CartItemsComponent, CheckoutSummaryComponent],
   template: `
-    <div class="checkout">
+    <div class="page-container-narrow">
       <ng-container *ngIf="cartItems$ | async as cart">
         <header *ngIf="cart.length > 0" class="checkout-heading">
           <div>
@@ -39,9 +41,9 @@ import type { Product } from '../../shared/models/catalog';
           <span class="price-label">Price</span>
         </header>
 
-        <div *ngIf="cart.length === 0" class="empty-cart">
+        <div *ngIf="cart.length === 0" class="empty-state">
           <div class="empty-icon">👜</div>
-          <h2>Your bag is empty</h2>
+          <h3>Your bag is empty</h3>
           <p>Add a jewel to begin checkout.</p>
           <a routerLink="/store" class="btn-primary">Discover Jewelry</a>
         </div>
@@ -49,80 +51,13 @@ import type { Product } from '../../shared/models/catalog';
         <div *ngIf="cart.length > 0" class="checkout-grid">
           <div class="checkout-main">
             <section class="cart-card">
-              <div class="cart-items">
-                <article class="cart-item" *ngFor="let item of cart">
-                  <div class="cart-thumb">
-                    <img *ngIf="item.imageUrl; else initials" [src]="item.imageUrl" [alt]="item.name" />
-                    <ng-template #initials>{{ item.name.charAt(0) }}</ng-template>
-                  </div>
-                  <div class="cart-info">
-                    <p class="cart-name">{{ item.name }}</p>
-                    <span class="stock" [class.stock-warning]="item.inventory !== undefined && item.inventory <= 5 && item.inventory > 0" [class.stock-danger]="item.inventory === 0">
-                      <span *ngIf="item.inventory === undefined || item.inventory > 5">In stock</span>
-                      <span *ngIf="item.inventory !== undefined && item.inventory <= 5 && item.inventory > 0">Only {{ item.inventory }} left</span>
-                      <span *ngIf="item.inventory === 0">Out of stock</span>
-                    </span>
-                    <span class="shipping-badge" *ngIf="item.inventory !== 0">Eligible for FREE Shipping</span>
-                    <div class="cart-actions">
-                      <div class="qty-group">
-                        <button type="button" (click)="updateQuantity(item.productId, item.quantity - 1)" [disabled]="item.quantity <= 1">−</button>
-                        <span>{{ item.quantity }}</span>
-                        <button type="button" (click)="updateQuantity(item.productId, item.quantity + 1)" [disabled]="item.inventory !== undefined && item.quantity >= item.inventory">+</button>
-                      </div>
-                      <button type="button" class="remove-item-btn" (click)="removeItem(item.productId)" title="Remove item">
-                        Remove
-                      </button>
-                      <button 
-                        *ngIf="item.priceBreakdown"
-                        type="button" 
-                        class="toggle-breakdown-btn" 
-                        (click)="toggleItemBreakdown(item.productId)"
-                        [attr.aria-expanded]="isBreakdownVisible(item.productId)">
-                        <span>{{ isBreakdownVisible(item.productId) ? 'Hide' : 'Show' }} Price Calculation</span>
-                        <span class="toggle-icon">{{ isBreakdownVisible(item.productId) ? '▼' : '▶' }}</span>
-                      </button>
-                    </div>
-                    <div class="breakdown-toggle-section" *ngIf="item.priceBreakdown">
-                      <div class="item-price-breakdown" *ngIf="isBreakdownVisible(item.productId)">
-                        <div class="breakdown-header">
-                          <strong>Price Breakdown (per unit):</strong>
-                        </div>
-                        <div class="breakdown-row" *ngIf="item.priceBreakdown.metalValue > 0">
-                          <span class="breakdown-label">Metal Value:</span>
-                          <span class="breakdown-value">{{ item.priceBreakdown.metalValue | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                        <div class="breakdown-row" *ngIf="item.priceBreakdown.wastageValue > 0">
-                          <span class="breakdown-label">Wastage Value:</span>
-                          <span class="breakdown-value">{{ item.priceBreakdown.wastageValue | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                        <div class="breakdown-row" *ngIf="item.priceBreakdown.makingCharges > 0">
-                          <span class="breakdown-label">Making Charges:</span>
-                          <span class="breakdown-value">{{ item.priceBreakdown.makingCharges | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                        <div class="breakdown-row" *ngIf="item.priceBreakdown.stoneCharges > 0">
-                          <span class="breakdown-label">Stone Charges:</span>
-                          <span class="breakdown-value">{{ item.priceBreakdown.stoneCharges | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                        <div class="breakdown-row breakdown-subtotal">
-                          <span class="breakdown-label">Subtotal (per unit):</span>
-                          <span class="breakdown-value">{{ item.priceBreakdown.subtotal | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                        <div class="breakdown-row" *ngIf="item.priceBreakdown.gstAmount > 0">
-                          <span class="breakdown-label">GST (per unit):</span>
-                          <span class="breakdown-value">{{ item.priceBreakdown.gstAmount | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                        <div class="breakdown-row breakdown-total">
-                          <span class="breakdown-label">Total ({{ item.quantity }} {{ item.quantity === 1 ? 'unit' : 'units' }}):</span>
-                          <span class="breakdown-value">{{ item.price.amount | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="cart-price">
-                    {{ item.price.amount | currency : (item.price.currency || 'INR') : 'symbol' : '1.2-2' }}
-                  </div>
-                </article>
-              </div>
+              <app-cart-items
+                [items]="cart"
+                [visibleBreakdowns]="visibleBreakdowns()"
+                (updateQuantity)="updateQuantity($event.productId, $event.quantity)"
+                (removeItem)="removeItem($event)"
+                (toggleBreakdown)="toggleItemBreakdown($event)"
+              ></app-cart-items>
               <div class="cart-subtotal">
                 Subtotal ({{ cart.length }} {{ cart.length === 1 ? 'item' : 'items' }}):
                 <strong>{{ cartTotal$ | async | currency : 'INR' : 'symbol' : '1.2-2' }}</strong>
@@ -429,57 +364,13 @@ import type { Product } from '../../shared/models/catalog';
                 </div>
               </div>
 
-              <div class="summary-breakdown" *ngIf="getTotalBreakdown(cart) as breakdown">
-                <div class="breakdown-header">
-                  <strong>Order Summary</strong>
-                </div>
-                <div class="summary-breakdown-row" *ngIf="breakdown.metalValue > 0">
-                  <span class="breakdown-label">Metal Value:</span>
-                  <span class="breakdown-value">{{ breakdown.metalValue | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
-                </div>
-                <div class="summary-breakdown-row" *ngIf="breakdown.wastageValue > 0">
-                  <span class="breakdown-label">Wastage Value:</span>
-                  <span class="breakdown-value">{{ breakdown.wastageValue | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
-                </div>
-                <div class="summary-breakdown-row" *ngIf="breakdown.makingCharges > 0">
-                  <span class="breakdown-label">Making Charges:</span>
-                  <span class="breakdown-value">{{ breakdown.makingCharges | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
-                </div>
-                <div class="summary-breakdown-row" *ngIf="breakdown.stoneCharges > 0">
-                  <span class="breakdown-label">Stone Charges:</span>
-                  <span class="breakdown-value">{{ breakdown.stoneCharges | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
-                </div>
-                <div class="summary-breakdown-row summary-subtotal">
-                  <span class="breakdown-label">Subtotal:</span>
-                  <span class="breakdown-value">{{ breakdown.subtotal | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
-                </div>
-                <div class="summary-breakdown-row" *ngIf="breakdown.gstAmount > 0">
-                  <span class="breakdown-label">GST:</span>
-                  <span class="breakdown-value">{{ breakdown.gstAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
-                </div>
-              </div>
-
-              <div class="summary-total-line" *ngIf="!getTotalBreakdown(cart)">
-                <span>Subtotal ({{ cart.length }} {{ cart.length === 1 ? 'item' : 'items' }}):</span>
-                <strong>{{ cartTotal$ | async | currency : 'INR' : 'symbol' : '1.2-2' }}</strong>
-              </div>
-
-              <div *ngIf="selectedShippingMethod()" class="summary-total-line">
-                <span>Shipping ({{ selectedShippingMethod()?.name }}):</span>
-                <strong>{{ selectedShippingMethod()?.baseCost.amount | currency : (selectedShippingMethod()?.baseCost.currency || 'INR') : 'symbol' : '1.2-2' }}</strong>
-              </div>
-
-              <div *ngIf="appliedDiscount()" class="summary-total-line discount-line">
-                <span>Discount ({{ appliedDiscount()?.discount.code }}):</span>
-                <strong style="color: #067d62">
-                  -{{ appliedDiscount()?.discountAmount || 0 | currency : (appliedDiscount()?.discountCurrency || 'INR') : 'symbol' : '1.2-2' }}
-                </strong>
-              </div>
-
-              <div class="summary-total-line total">
-                <span>Total:</span>
-                <strong>{{ (finalTotal$ | async) || 0 | currency : 'INR' : 'symbol' : '1.2-2' }}</strong>
-              </div>
+              <app-checkout-summary
+                [items]="getSummaryItems(cart)"
+                [discountCode]="appliedDiscount()?.discount.code"
+                [note]="'Items reserved for the next 30 minutes.'"
+                [total]="(finalTotal$ | async) || 0"
+                [totalCurrency]="'INR'"
+              ></app-checkout-summary>
 
               <button
                 class="btn-primary proceed"
@@ -509,12 +400,6 @@ import type { Product } from '../../shared/models/catalog';
       :host {
         display: block;
       }
-      .checkout {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1rem 3rem;
-        background: var(--premium-pearl);
-      }
       .checkout-heading {
         display: flex;
         justify-content: space-between;
@@ -538,40 +423,6 @@ import type { Product } from '../../shared/models/catalog';
         font-size: 0.85rem;
         color: var(--premium-stone);
       }
-      .empty-cart {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 8px;
-        box-shadow: 0 20px 50px var(--premium-shadow);
-      }
-      .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-      }
-      .btn-primary {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.85rem 2.5rem;
-        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
-        color: #fff;
-        text-decoration: none;
-        border-radius: 999px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
-      }
-      .btn-primary:hover:not(:disabled) {
-        opacity: 0.9;
-      }
-      .btn-primary:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
       .checkout-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 320px;
@@ -581,13 +432,6 @@ import type { Product } from '../../shared/models/catalog';
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-      }
-      .cart-card {
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
       }
       .cart-items {
         display: flex;
@@ -833,26 +677,6 @@ import type { Product } from '../../shared/models/catalog';
         flex-direction: column;
         gap: 2rem;
       }
-      .form-card {
-        background: #fff;
-        border: 1px solid #d5d9d9;
-        border-radius: 8px;
-        padding: 2rem;
-      }
-      .card-header {
-        margin-bottom: 1.5rem;
-      }
-      .card-header h2 {
-        margin: 0;
-        font-size: 1.25rem;
-        color: #0f1111;
-        font-weight: 600;
-      }
-      .card-header p {
-        margin: 0.5rem 0 0;
-        color: var(--premium-titanium);
-        font-size: 0.95rem;
-      }
       label {
         display: flex;
         flex-direction: column;
@@ -877,12 +701,6 @@ import type { Product } from '../../shared/models/catalog';
       textarea {
         resize: vertical;
       }
-      .grid-two {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-      }
       .payment-pill {
         border: 1px solid var(--premium-silver);
         border-radius: 12px;
@@ -900,14 +718,6 @@ import type { Product } from '../../shared/models/catalog';
         border-radius: 999px;
         font-weight: 600;
       }
-      .alert-error {
-        padding: 0.75rem 1rem;
-        background: rgba(183, 110, 121, 0.12);
-        border: 1px solid rgba(183, 110, 121, 0.4);
-        border-radius: 12px;
-        color: var(--premium-rose-gold);
-        font-size: 0.9rem;
-      }
       .form-error {
         margin-bottom: 0;
       }
@@ -918,13 +728,6 @@ import type { Product } from '../../shared/models/catalog';
         flex-direction: column;
         gap: 1rem;
         height: fit-content;
-      }
-      .summary-card {
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 18px;
-        padding: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
       }
       .summary-discount-section {
         margin-bottom: 1.5rem;
@@ -1083,22 +886,6 @@ import type { Product } from '../../shared/models/catalog';
       }
       .discount-input-group input {
         flex: 1;
-      }
-      .btn-secondary {
-        padding: 0.65rem 1.5rem;
-        background: var(--premium-moonstone);
-        border: 1px solid var(--premium-silver);
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .btn-secondary:hover:not(:disabled) {
-        background: var(--premium-silver);
-      }
-      .btn-secondary:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
       }
       .discount-success {
         display: flex;
@@ -1521,6 +1308,67 @@ export class CheckoutComponent implements OnInit {
 
   isBreakdownVisible(productId: string): boolean {
     return this.visibleBreakdowns().has(productId);
+  }
+
+  getSummaryItems(cart: any[]): SummaryItem[] {
+    const items: SummaryItem[] = [];
+    const breakdown = this.getTotalBreakdown(cart);
+    
+    if (breakdown) {
+      if (breakdown.metalValue > 0) {
+        items.push({ label: 'Metal Value', value: breakdown.metalValue, currency: 'INR' });
+      }
+      if (breakdown.wastageValue > 0) {
+        items.push({ label: 'Wastage Value', value: breakdown.wastageValue, currency: 'INR' });
+      }
+      if (breakdown.makingCharges > 0) {
+        items.push({ label: 'Making Charges', value: breakdown.makingCharges, currency: 'INR' });
+      }
+      if (breakdown.stoneCharges > 0) {
+        items.push({ label: 'Stone Charges', value: breakdown.stoneCharges, currency: 'INR' });
+      }
+      items.push({ label: 'Subtotal', value: breakdown.subtotal, currency: 'INR' });
+      if (breakdown.gstAmount > 0) {
+        items.push({ label: 'GST', value: breakdown.gstAmount, currency: 'INR' });
+      }
+    } else {
+      // Fallback to simple subtotal
+      this.cartTotal$.pipe(take(1)).subscribe(total => {
+        items.push({ label: `Subtotal (${cart.length} ${cart.length === 1 ? 'item' : 'items'})`, value: total, currency: 'INR' });
+      });
+    }
+
+    // Add shipping
+    const shipping = this.selectedShippingMethod();
+    if (shipping) {
+      items.push({ 
+        label: `Shipping (${shipping.name})`, 
+        value: shipping.baseCost.amount, 
+        currency: shipping.baseCost.currency || 'INR' 
+      });
+    }
+
+    // Add discount
+    const discount = this.appliedDiscount();
+    if (discount) {
+      items.push({ 
+        label: `Discount (${discount.discount.code})`, 
+        value: -(discount.discountAmount || 0), 
+        currency: discount.discountCurrency || 'INR' 
+      });
+    }
+
+    // Add total
+    this.finalTotal$.pipe(take(1)).subscribe(total => {
+      items.push({ 
+        label: 'Total', 
+        value: total || 0, 
+        currency: 'INR',
+        isTotal: true 
+      });
+    });
+
+    return items;
   }
 
   getTotalBreakdown(cart: any[]): { metalValue: number; wastageValue: number; makingCharges: number; stoneCharges: number; subtotal: number; gstAmount: number } | null {

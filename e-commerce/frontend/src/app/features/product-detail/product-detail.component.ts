@@ -20,7 +20,7 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
   standalone: true,
   imports: [NgIf, AsyncPipe, CurrencyPipe, RouterLink, FormsModule],
   template: `
-    <div class="product-page">
+    <div class="page-container-narrow">
       <ng-container *ngIf="product$ | async as product; else loadingState">
         <header class="product-heading">
           <div>
@@ -205,12 +205,6 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
       :host {
         display: block;
       }
-      .product-page {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1rem 3rem;
-        background: var(--premium-pearl);
-      }
       .product-heading {
         display: flex;
         justify-content: space-between;
@@ -244,13 +238,6 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-      }
-      .product-card {
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
       }
       .product-image-section {
         margin-bottom: 1.5rem;
@@ -427,13 +414,6 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
         gap: 1rem;
         height: fit-content;
       }
-      .action-card {
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 18px;
-        padding: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
-      }
       .action-header {
         margin-bottom: 1.5rem;
         padding-bottom: 1rem;
@@ -523,54 +503,18 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
         font-size: 1.25rem;
         color: var(--premium-onyx);
       }
-      .btn-primary {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.85rem 2.5rem;
-        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
-        color: #fff;
-        text-decoration: none;
-        border-radius: 999px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
+      .action-card .btn-primary {
         width: 100%;
-        font-size: 1rem;
         margin-bottom: 0.75rem;
+        font-size: 1rem;
       }
-      .btn-primary:hover:not(:disabled) {
-        opacity: 0.9;
-      }
-      .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      .btn-secondary {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.85rem 2.5rem;
+
+      .action-card .btn-secondary {
+        width: 100%;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
         background: transparent;
         color: var(--premium-rose-gold);
-        text-decoration: none;
-        border-radius: 999px;
-        font-weight: 600;
-        border: 1px solid var(--premium-silver);
-        transition: all 0.2s ease;
-        cursor: pointer;
-        width: 100%;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      .btn-secondary:hover:not(:disabled) {
-        background: var(--premium-moonstone);
-      }
-      .btn-secondary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
       }
       .assurance-info {
         padding-top: 1.5rem;

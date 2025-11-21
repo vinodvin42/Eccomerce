@@ -14,6 +14,7 @@ import { calculateProductPrice } from '../../core/utils/price-calculator';
 import { selectCartItemCount } from '../../state/cart/cart.selectors';
 import { CategoryService } from '../../core/services/category.service';
 import type { Category } from '../../shared/models/category';
+import { HeroSliderComponent, type HeroSlide } from '../../shared/components/hero-slider/hero-slider.component';
 
 type AvailabilityFilter = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
 
@@ -33,42 +34,16 @@ interface AvailabilityOption {
 @Component({
   selector: 'app-store',
   standalone: true,
-  imports: [NgFor, NgIf, AsyncPipe, CurrencyPipe, TitleCasePipe],
+  imports: [NgFor, NgIf, AsyncPipe, CurrencyPipe, TitleCasePipe, HeroSliderComponent],
   template: `
     <div class="store">
       <!-- Hero Section -->
-      <section class="store-hero">
-        <div class="hero-slider">
-          <div
-            class="hero-slide"
-            *ngFor="let slide of heroSlides; let i = index"
-            [class.active]="i === activeSlide()"
-            [style.backgroundImage]="'url(' + slide.image + ')'"
-          >
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-              <p class="hero-eyebrow">{{ slide.eyebrow }}</p>
-              <h1 class="hero-title">{{ slide.title }}</h1>
-              <p class="hero-subtitle">{{ slide.subtitle }}</p>
-              <div class="hero-actions">
-                <button class="btn-primary" (click)="filterByCategory(slide.slug, $event)">
-                  Explore {{ slide.category }}
-                </button>
-                <button class="btn-secondary" (click)="viewAll($event)">View All Collections</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="hero-indicators">
-          <button
-            *ngFor="let slide of heroSlides; let i = index"
-            class="indicator-dot"
-            [class.active]="i === activeSlide()"
-            (click)="setSlide(i)"
-            aria-label="View slide {{ i + 1 }}"
-          ></button>
-        </div>
-      </section>
+      <app-hero-slider
+        [slides]="heroSlidesData()"
+        [autoSlideInterval]="5000"
+        (categoryClick)="filterByCategory($event.slug, $event.event)"
+        (viewAll)="viewAll($event)"
+      ></app-hero-slider>
 
       <section class="category-banners">
         <div class="category-banner" *ngFor="let banner of categoryBanners" (click)="filterByCategory(banner.slug)">
@@ -86,15 +61,6 @@ interface AvailabilityOption {
       </section>
 
       <!-- Filters and Sort Bar -->
-      <div class="store-controls">
-        <div class="controls-left">
-          <span class="product-count">{{ (sortedProducts$ | async)?.length || 0 }} products</span>
-          <span class="active-filter" *ngIf="activeCategorySlug">
-            Viewing {{ activeCategorySlug | titlecase }}
-            <button class="clear-filter" (click)="clearCategoryFilter($event)">Clear</button>
-          </span>
-        </div>
-      </div>
 
       <div class="active-filters-panel" *ngIf="hasActiveAdvancedFilters()">
         <span class="active-filters-label">Active filters:</span>
@@ -109,7 +75,7 @@ interface AvailabilityOption {
 
       <!-- Loading State -->
       <div *ngIf="loading$ | async" class="loading-container">
-        <div class="loading-spinner"></div>
+        <div class="spinner"></div>
         <p>Loading products...</p>
       </div>
 
@@ -227,7 +193,10 @@ interface AvailabilityOption {
                     </div>
                   </div>
                   <div class="product-badges">
-                    <span *ngIf="product.inventory <= 5 && product.inventory > 0" class="badge badge-warning">
+                    <span *ngIf="product.inventory === 1" class="badge badge-warning">
+                      ONLY 1 LEFT!
+                    </span>
+                    <span *ngIf="product.inventory > 1 && product.inventory <= 5" class="badge badge-warning">
                       ONLY {{ product.inventory }} LEFT!
                     </span>
                     <span *ngIf="product.inventory === 0" class="badge badge-danger">Out of Stock</span>
@@ -250,7 +219,7 @@ interface AvailabilityOption {
         <ng-template #emptyState>
           <div class="empty-state">
             <div class="empty-icon">🔍</div>
-            <h2>No products found</h2>
+            <h3>No products found</h3>
             <p>Try adjusting your search or filters</p>
             <button class="btn-primary" (click)="clearFilters()">Clear Filters</button>
           </div>
@@ -339,6 +308,23 @@ interface AvailabilityOption {
         flex-wrap: wrap;
       }
 
+      .hero-actions .btn-secondary {
+        padding: 0.875rem 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: #fff;
+        background: transparent;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .hero-actions .btn-secondary:hover {
+        border-color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
       .hero-indicators {
         display: flex;
         justify-content: center;
@@ -368,6 +354,11 @@ interface AvailabilityOption {
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
         margin-bottom: 3rem;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 2rem;
+        width: 100%;
       }
 
       .category-banner {
@@ -404,7 +395,7 @@ interface AvailabilityOption {
       .banner-content {
         position: relative;
         z-index: 1;
-        padding: 1.75rem;
+        padding: 0.75rem;
         color: #fff;
       }
 
@@ -461,22 +452,6 @@ interface AvailabilityOption {
         transform: translateY(0);
       }
 
-      .btn-secondary {
-        padding: 0.875rem 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        color: #fff;
-        background: transparent;
-        border-radius: 4px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .btn-secondary:hover {
-        border-color: #fff;
-        background: rgba(255, 255, 255, 0.1);
-      }
 
       /* Controls */
       .store-controls {
@@ -485,6 +460,9 @@ interface AvailabilityOption {
         align-items: center;
         padding: 1.5rem 2rem;
         background: #FFFFFF;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
         border: 1px solid #e5e5e5;
         border-radius: 4px;
         margin-bottom: 2rem;
@@ -557,6 +535,10 @@ interface AvailabilityOption {
         grid-template-columns: 280px 1fr;
         gap: 2rem;
         align-items: start;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 2rem;
       }
 
       .store-sidebar {
@@ -648,6 +630,11 @@ interface AvailabilityOption {
         border-radius: 999px;
         margin-bottom: 1.5rem;
         flex-wrap: wrap;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 2rem;
+        padding-right: 2rem;
       }
 
       .active-filters-label {
@@ -677,35 +664,6 @@ interface AvailabilityOption {
         font-weight: 600;
       }
 
-      /* Loading */
-      .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 6rem 2rem;
-        gap: 1rem;
-      }
-
-      .loading-spinner {
-        width: 48px;
-        height: 48px;
-        border: 4px solid #e5e5e5;
-        border-top-color: #D4AF37;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .loading-container p {
-        color: #666666;
-        font-size: 1.125rem;
-      }
 
       /* Products Container */
       .products-container {
@@ -715,8 +673,8 @@ interface AvailabilityOption {
 
       .products-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 2rem;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
         padding: 0;
       }
 
@@ -735,8 +693,8 @@ interface AvailabilityOption {
       }
 
       .product-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
         border-color: #D4AF37;
       }
 
@@ -750,7 +708,7 @@ interface AvailabilityOption {
       .product-card__image {
         position: relative;
         width: 100%;
-        height: 320px;
+        height: 360px;
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         display: flex;
         align-items: center;
@@ -838,21 +796,21 @@ interface AvailabilityOption {
 
       .badge {
         padding: 0.5rem 0.875rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        border: none;
+        white-space: nowrap;
       }
 
       .badge-warning {
-        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-        color: #1A0A1A;
-        box-shadow: 0 4px 16px rgba(255, 215, 0, 0.6);
-        animation: pulse 2s ease-in-out infinite;
+        background: #FFD700;
+        color: #000000;
+        box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
       }
 
       @keyframes pulse {
@@ -871,11 +829,11 @@ interface AvailabilityOption {
       }
 
       .product-card__content {
-        padding: 1.5rem;
+        padding: 1.25rem;
         display: flex;
         flex-direction: column;
         flex: 1;
-        gap: 0.75rem;
+        gap: 0.5rem;
       }
 
       .product-card__header {
@@ -886,13 +844,13 @@ interface AvailabilityOption {
 
       .product-card__title {
         margin: 0;
-        font-size: 1.25rem;
-        font-weight: 400;
+        font-size: 1.125rem;
+        font-weight: 600;
         color: #1a1a1a;
-        line-height: 1.3;
+        line-height: 1.4;
         cursor: pointer;
         transition: color 0.2s ease;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.01em;
       }
 
       .product-card__title:hover {
@@ -901,11 +859,11 @@ interface AvailabilityOption {
 
       .product-card__sku {
         margin: 0;
-        color: #999999;
-        font-size: 0.75rem;
+        color: #666666;
+        font-size: 0.8125rem;
         font-family: 'Monaco', 'Menlo', monospace;
         font-weight: 400;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.02em;
       }
 
       .product-card__footer {
@@ -996,52 +954,7 @@ interface AvailabilityOption {
         z-index: 1;
       }
 
-      /* Empty State */
-      .empty-state {
-        text-align: center;
-        padding: 6rem 2rem;
-        background: #FFFFFF;
-        border: 1px solid #e5e5e5;
-        border-radius: 8px;
-      }
 
-      .empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        opacity: 0.3;
-        color: #D4AF37;
-      }
-
-      .empty-state h2 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1a1a1a;
-      }
-
-      .empty-state p {
-        margin: 0 0 2rem 0;
-        color: #666666;
-        font-size: 1rem;
-      }
-
-      .btn-primary {
-        padding: 0.875rem 2rem;
-        background: #1a1a1a;
-        color: #FFFFFF;
-        border: none;
-        border-radius: 4px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.3s;
-      }
-
-      .btn-primary:hover {
-        background: #D4AF37;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-      }
 
       /* Responsive Design */
       @media (max-width: 1024px) {
@@ -1059,7 +972,22 @@ interface AvailabilityOption {
         }
       }
 
+      @media (max-width: 1200px) {
+        .products-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1.25rem;
+        }
+      }
+
       @media (max-width: 768px) {
+        .store-controls,
+        .store-main-layout,
+        .active-filters-panel,
+        .category-banners {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+
         .store-hero {
           padding: 3rem 1.5rem;
         }
@@ -1092,8 +1020,8 @@ interface AvailabilityOption {
         }
 
         .products-grid {
-          grid-template-columns: 1fr;
-          gap: 1.5rem;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
         }
 
         .product-card__image {
@@ -1123,6 +1051,15 @@ interface AvailabilityOption {
           font-size: 1.75rem;
         }
 
+        .products-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .product-card__image {
+          height: 300px;
+        }
+
         .product-card__content {
           padding: 1.25rem;
         }
@@ -1141,6 +1078,8 @@ export class StoreComponent implements OnInit, OnDestroy {
   cartItemCount$: Observable<number>;
   sortedProducts$: Observable<Product[]>;
   readonly categories = signal<Category[]>([]);
+  heroSlidesData = signal<HeroSlide[]>([]);
+  
   readonly heroSlides = [
     {
       slug: 'rings',
@@ -1206,7 +1145,6 @@ export class StoreComponent implements OnInit, OnDestroy {
     { key: 'low_stock', label: 'Low Stock', description: '5 units or fewer' },
     { key: 'out_of_stock', label: 'Out of Stock', description: 'Currently unavailable' },
   ];
-  activeSlide = signal(0);
   activeCategorySlug: string | null = null;
   currentSort = 'name';
   private readonly sortBy$ = new BehaviorSubject<string>('name');
@@ -1215,7 +1153,6 @@ export class StoreComponent implements OnInit, OnDestroy {
   private readonly availabilityFilter$ = new BehaviorSubject<AvailabilityFilter>('all');
   selectedPriceFilter = signal<string>('all');
   selectedAvailabilityFilter = signal<AvailabilityFilter>('all');
-  private slideIntervalId: ReturnType<typeof setInterval> | null = null;
   private pendingCategorySlug: string | null = null;
 
   constructor(
@@ -1282,7 +1219,16 @@ export class StoreComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.startSlideRotation();
+    // Initialize hero slides data
+    this.heroSlidesData.set(this.heroSlides.map(slide => ({
+      image: slide.image,
+      eyebrow: slide.eyebrow,
+      title: slide.title,
+      subtitle: slide.subtitle,
+      category: slide.category,
+      slug: slide.slug
+    })));
+    
     this.loadCategories();
 
     this.route.queryParams
@@ -1297,9 +1243,7 @@ export class StoreComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.slideIntervalId) {
-      clearInterval(this.slideIntervalId);
-    }
+    // Cleanup handled by HeroSliderComponent
   }
 
   onSortChange(event: Event): void {
@@ -1308,10 +1252,6 @@ export class StoreComponent implements OnInit, OnDestroy {
     this.sortBy$.next(this.currentSort);
   }
 
-  setSlide(index: number): void {
-    this.activeSlide.set(index);
-    this.restartSlideRotation();
-  }
 
   filterByCategory(slug: string, event?: Event): void {
     event?.stopPropagation();
@@ -1441,19 +1381,6 @@ export class StoreComponent implements OnInit, OnDestroy {
     this.store.dispatch(CatalogActions.loadProducts({ search: undefined }));
   }
 
-  private startSlideRotation(): void {
-    this.slideIntervalId = setInterval(() => {
-      const nextIndex = (this.activeSlide() + 1) % this.heroSlides.length;
-      this.activeSlide.set(nextIndex);
-    }, 6000);
-  }
-
-  private restartSlideRotation(): void {
-    if (this.slideIntervalId) {
-      clearInterval(this.slideIntervalId);
-    }
-    this.startSlideRotation();
-  }
 
   private loadCategories(): void {
     this.categoryService

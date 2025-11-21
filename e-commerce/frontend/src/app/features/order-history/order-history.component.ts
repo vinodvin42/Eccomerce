@@ -21,7 +21,7 @@ interface StageDescriptor {
   standalone: true,
   imports: [NgFor, NgIf, AsyncPipe, CurrencyPipe, DatePipe, TitleCasePipe, RouterLink],
   template: `
-    <div class="orders-page">
+    <div class="page-container-narrow">
       <section class="orders-hero">
         <div>
           <p class="eyebrow">Order timeline</p>
@@ -109,11 +109,6 @@ interface StageDescriptor {
   `,
   styles: [
     `
-      .orders-page {
-        padding: 3rem 1.5rem 4rem;
-        background: linear-gradient(180deg, var(--premium-pearl) 0%, var(--premium-moonstone) 100%);
-        min-height: 100vh;
-      }
 
       .orders-hero {
         max-width: 900px;

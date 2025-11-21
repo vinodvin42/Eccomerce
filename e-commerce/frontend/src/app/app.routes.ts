@@ -11,6 +11,7 @@ import { ReturnsComponent } from './features/returns/returns.component';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 import { StoreLayoutComponent } from './layouts/store-layout/store-layout.component';
 import { StoreComponent } from './features/store/store.component';
+import { LandingComponent } from './features/landing/landing.component';
 import { CartComponent } from './features/cart/cart.component';
 import { CheckoutComponent } from './features/checkout/checkout.component';
 import { OrderHistoryComponent } from './features/order-history/order-history.component';
@@ -18,10 +19,16 @@ import { OrderDetailComponent } from './features/order-detail/order-detail.compo
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { ProductDetailComponent } from './features/product-detail/product-detail.component';
+import { ProfileComponent } from './features/profile/profile.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const appRoutes: Routes = [
-  { path: '', redirectTo: 'store', pathMatch: 'full' },
+  { path: '', redirectTo: 'landing', pathMatch: 'full' },
+  {
+    path: 'landing',
+    component: StoreLayoutComponent,
+    children: [{ path: '', component: LandingComponent, title: 'Premium Jewelry' }],
+  },
   {
     path: 'admin',
     component: MainLayoutComponent,
@@ -64,6 +71,12 @@ export const appRoutes: Routes = [
     path: 'checkout',
     component: StoreLayoutComponent,
     children: [{ path: '', component: CheckoutComponent, title: 'Checkout' }],
+  },
+  {
+    path: 'profile',
+    component: StoreLayoutComponent,
+    canActivate: [authGuard],
+    children: [{ path: '', component: ProfileComponent, title: 'My Profile' }],
   },
   {
     path: 'my-orders',

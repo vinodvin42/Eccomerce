@@ -15,7 +15,7 @@ import type { ReturnRequest } from '../../shared/models/returns';
   standalone: true,
   imports: [NgIf, NgFor, AsyncPipe, CurrencyPipe, DatePipe, TitleCasePipe, RouterLink, ReactiveFormsModule],
   template: `
-    <div class="order-detail-page">
+    <div class="page-container-narrow">
       <div class="order-shell" *ngIf="order$ | async as order; else loadingState">
         <header class="order-header">
           <div>
@@ -170,11 +170,6 @@ import type { ReturnRequest } from '../../shared/models/returns';
   `,
   styles: [
     `
-      .order-detail-page {
-        padding: 3rem 1.5rem 4rem;
-        background: linear-gradient(180deg, #fdfcf9 0%, #f7f4ef 100%);
-        min-height: 100vh;
-      }
 
       .order-shell {
         max-width: 1000px;

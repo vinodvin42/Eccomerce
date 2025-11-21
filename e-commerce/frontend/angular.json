@@ -43,7 +43,7 @@
             "browserTarget": "web:build",
             "host": "0.0.0.0",
             "proxyConfig": "proxy.conf.json",
-            "allowedHosts": ["9c62957bf994.ngrok-free.app"]
+            "allowedHosts": ["9c62957bf994.ngrok-free.app", "33691e94302f.ngrok-free.app"]
           },
           "configurations": {
             "production": {

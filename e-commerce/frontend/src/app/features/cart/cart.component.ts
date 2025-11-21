@@ -2,7 +2,6 @@ import { AsyncPipe, CurrencyPipe, NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-
 import { CartActions } from '../../state/cart/cart.actions';
 import { selectCartItems, selectCartTotal } from '../../state/cart/cart.selectors';
 import type { AppState } from '../../state';
@@ -13,7 +12,7 @@ import { BrandingService } from '../../core/services/branding.service';
   standalone: true,
   imports: [NgFor, NgIf, AsyncPipe, CurrencyPipe, RouterLink],
   template: `
-    <div class="cart-page">
+    <div class="page-container-narrow">
       <ng-container *ngIf="(cartItems$ | async) as items">
         <header *ngIf="items.length > 0" class="cart-heading">
           <div>
@@ -23,9 +22,9 @@ import { BrandingService } from '../../core/services/branding.service';
           <a routerLink="/store" class="link-soft">← Continue Shopping</a>
         </header>
 
-        <div *ngIf="items.length === 0" class="empty-cart">
+        <div *ngIf="items.length === 0" class="empty-state">
           <div class="empty-icon">👜</div>
-          <h2>Your bag is empty</h2>
+          <h3>Your bag is empty</h3>
           <p>Add items to your cart to get started.</p>
           <a routerLink="/store" class="btn-primary">Discover Jewelry</a>
         </div>
@@ -86,12 +85,6 @@ import { BrandingService } from '../../core/services/branding.service';
       :host {
         display: block;
       }
-      .cart-page {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1rem 3rem;
-        background: var(--premium-pearl);
-      }
       .cart-heading {
         display: flex;
         justify-content: space-between;
@@ -116,36 +109,6 @@ import { BrandingService } from '../../core/services/branding.service';
         text-decoration: none;
         font-weight: 600;
       }
-      .empty-cart {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 8px;
-        box-shadow: 0 20px 50px var(--premium-shadow);
-      }
-      .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-      }
-      .btn-primary {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.85rem 2.5rem;
-        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
-        color: #fff;
-        text-decoration: none;
-        border-radius: 999px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
-      }
-      .btn-primary:hover {
-        opacity: 0.9;
-      }
       .cart-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 320px;
@@ -155,13 +118,6 @@ import { BrandingService } from '../../core/services/branding.service';
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-      }
-      .cart-card {
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
       }
       .cart-items {
         display: flex;
@@ -275,13 +231,6 @@ import { BrandingService } from '../../core/services/branding.service';
         flex-direction: column;
         gap: 1rem;
         height: fit-content;
-      }
-      .summary-card {
-        background: #fff;
-        border: 1px solid var(--premium-silver);
-        border-radius: 18px;
-        padding: 1.5rem;
-        box-shadow: 0 20px 40px var(--premium-shadow);
       }
       .summary-total-line {
         display: flex;

@@ -15,7 +15,7 @@ import type { ShippingMethod } from '../../shared/models/shipping-method';
   standalone: true,
   imports: [NgIf, NgFor, AsyncPipe, ReactiveFormsModule, CurrencyPipe],
   template: `
-    <div class="masters-page">
+    <div class="page-container-wide">
       <!-- Header -->
       <div class="page-header">
         <div>
@@ -435,28 +435,6 @@ import type { ShippingMethod } from '../../shared/models/shipping-method';
   `,
   styles: [
     `
-      .masters-page {
-        padding: 2rem;
-        max-width: 1600px;
-        margin: 0 auto;
-      }
-
-      .page-header {
-        margin-bottom: 2rem;
-      }
-
-      .page-header h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: var(--premium-onyx);
-      }
-
-      .page-subtitle {
-        margin: 0;
-        color: var(--premium-titanium);
-        font-size: 1.125rem;
-      }
 
       .notification {
         margin: 1rem 0;

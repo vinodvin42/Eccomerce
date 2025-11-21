@@ -43,7 +43,7 @@ interface DashboardInsight {
   standalone: true,
   imports: [NgIf, NgFor, CurrencyPipe, DatePipe, TitleCasePipe, RouterLink, FormsModule],
   template: `
-    <div class="dashboard">
+    <div class="page-container-wide">
       <!-- Header -->
       <div class="dashboard-header">
         <div>
@@ -441,11 +441,6 @@ interface DashboardInsight {
   `,
   styles: [
     `
-      .dashboard {
-        padding: 2rem;
-        max-width: 1600px;
-        margin: 0 auto;
-      }
 
       .dashboard-header {
         display: flex;
@@ -480,24 +475,18 @@ interface DashboardInsight {
         color: var(--premium-titanium);
       }
 
-      .btn-refresh,
-      .btn-primary,
-      .btn-secondary {
+      .btn-refresh {
         padding: 0.75rem 1.5rem;
-        border: none;
+        border: 1px solid var(--premium-silver);
         border-radius: 0.5rem;
+        background: var(--premium-moonstone);
+        color: var(--premium-onyx);
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-      }
-
-      .btn-refresh {
-        background: var(--premium-moonstone);
-        color: var(--premium-onyx);
-        border: 1px solid var(--premium-silver);
       }
 
       .btn-refresh:hover:not(:disabled) {
@@ -508,28 +497,6 @@ interface DashboardInsight {
       .btn-refresh:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-      }
-
-      .btn-primary {
-        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
-        color: #fff;
-        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
-      }
-
-      .btn-primary:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-      }
-
-      .btn-secondary {
-        background: var(--premium-moonstone);
-        color: var(--premium-onyx);
-        border: 1px solid var(--premium-silver);
-      }
-
-      .btn-secondary:hover {
-        background: var(--premium-silver);
-        border-color: var(--premium-gold);
       }
 
       .filters-panel {
@@ -635,12 +602,6 @@ interface DashboardInsight {
         font-size: 0.875rem;
       }
 
-      .loading-container,
-      .error-container {
-        text-align: center;
-        padding: 6rem 2rem;
-      }
-
       .spinner-large {
         width: 64px;
         height: 64px;
@@ -649,12 +610,6 @@ interface DashboardInsight {
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin: 0 auto 1.5rem;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
       }
 
       .error-content {

@@ -9,13 +9,15 @@ import { CategoryService } from '../../core/services/category.service';
 import type { Category } from '../../shared/models/category';
 import type { Product, ProductListResponse } from '../../shared/models/catalog';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { ProductFormComponent } from '../../shared/components/product-form/product-form.component';
+import { ProductListComponent } from '../../shared/components/product-list/product-list.component';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [NgFor, NgIf, AsyncPipe, ReactiveFormsModule, CurrencyPipe, ModalComponent],
+  imports: [NgFor, NgIf, AsyncPipe, ReactiveFormsModule, CurrencyPipe, ModalComponent, ProductFormComponent, ProductListComponent],
   template: `
-    <div class="products-page">
+    <div class="page-container">
       <!-- Header Section -->
       <div class="page-header">
         <div>
@@ -30,186 +32,14 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 
       <!-- Add Product Modal -->
       <app-modal [isOpen]="showAddForm()" title="Add New Product" (closeModal)="showAddForm.set(false)">
-        <form [formGroup]="form" (ngSubmit)="createProduct()" class="product-form">
-          <div class="form-row">
-            <label>
-              <span>Product Name *</span>
-              <input formControlName="name" type="text" placeholder="Enter product name" />
-              <small *ngIf="form.get('name')?.invalid && form.get('name')?.touched">
-                Product name is required
-              </small>
-            </label>
-            <label>
-              <span>SKU *</span>
-              <input formControlName="sku" type="text" placeholder="Enter SKU" />
-              <small *ngIf="form.get('sku')?.invalid && form.get('sku')?.touched">
-                SKU is required
-              </small>
-            </label>
-            <label>
-              <span>Category</span>
-              <select formControlName="categoryId">
-                <option value="">Unassigned</option>
-                <option *ngFor="let category of categories()" [value]="category.id">
-                  {{ category.name }}
-                </option>
-              </select>
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Description</span>
-              <textarea formControlName="description" placeholder="Enter product description" rows="3"></textarea>
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Image URL</span>
-              <input formControlName="imageUrl" type="url" placeholder="https://example.com/image.jpg" />
-              <small>Enter a URL to an image for this product</small>
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Price (₹) *</span>
-              <input formControlName="price" type="number" step="0.01" min="0" placeholder="0.00" />
-              <small *ngIf="form.get('price')?.invalid && form.get('price')?.touched">
-                Valid price is required
-              </small>
-            </label>
-            <label>
-              <span>Inventory *</span>
-              <input formControlName="inventory" type="number" min="0" placeholder="0" />
-              <small *ngIf="form.get('inventory')?.invalid && form.get('inventory')?.touched">
-                Valid inventory count is required
-              </small>
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Net Wt (g)</span>
-              <input formControlName="weight" type="number" step="0.001" min="0" placeholder="0.000" />
-            </label>
-            <label>
-              <span>Material</span>
-              <input formControlName="material" type="text" placeholder="e.g., Gold, Silver" />
-            </label>
-            <label>
-              <span>Purity</span>
-              <input formControlName="purity" type="text" placeholder="e.g., 22K, 18K, 925" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Stone Type</span>
-              <input formControlName="stoneType" type="text" placeholder="e.g., Diamond, Ruby" />
-            </label>
-            <label>
-              <span>Size</span>
-              <input formControlName="size" type="text" placeholder="e.g., Ring size, Chain length" />
-            </label>
-            <label>
-              <span>Color</span>
-              <input formControlName="color" type="text" placeholder="e.g., Yellow Gold, White Gold" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Brand</span>
-              <input formControlName="brand" type="text" placeholder="Brand or manufacturer" />
-            </label>
-            <label>
-              <span>Certification</span>
-              <input formControlName="certification" type="text" placeholder="Certification details" />
-            </label>
-            <label>
-              <span>Warranty Period</span>
-              <input formControlName="warrantyPeriod" type="text" placeholder="e.g., 1 Year, Lifetime" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Origin</span>
-              <input formControlName="origin" type="text" placeholder="Country of manufacture" />
-            </label>
-            <label>
-              <span>HSN Code</span>
-              <input formControlName="hsnCode" type="text" placeholder="HSN Code for taxation" />
-            </label>
-            <label>
-              <span>Group</span>
-              <input formControlName="group" type="text" placeholder="e.g., Gold, Silver, Rose Gold" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Gross Weight (g)</span>
-              <input formControlName="grossWeight" type="number" step="0.001" min="0" placeholder="0.000" />
-            </label>
-            <label>
-              <span>Stone Weight (g)</span>
-              <input formControlName="stoneWeight" type="number" step="0.001" min="0" placeholder="0.000" />
-            </label>
-            <label>
-              <span>Rate/g (₹)</span>
-              <input formControlName="ratePerGram" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Wastage %</span>
-              <input formControlName="wastagePercent" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-            <label>
-              <span>Metal Value (₹)</span>
-              <input formControlName="metalValue" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-            <label>
-              <span>Wastage Value (₹)</span>
-              <input formControlName="wastageValue" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Making Charges (₹)</span>
-              <input formControlName="makingCharges" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-            <label>
-              <span>Stone Charges (₹)</span>
-              <input formControlName="stoneCharges" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-            <label>
-              <span>GST %</span>
-              <input formControlName="gstPercent" type="number" step="0.01" min="0" placeholder="0.00" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              <span>Gender</span>
-              <select formControlName="gender">
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Unisex">Unisex</option>
-              </select>
-            </label>
-            <label>
-              <span>Ready to Deliver</span>
-              <select formControlName="readyToDeliver">
-                <option [value]="false">No</option>
-                <option [value]="true">Yes</option>
-              </select>
-            </label>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" (click)="cancelAdd()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="form.invalid || createInFlight()">
-              <span *ngIf="createInFlight()">⏳</span>
-              <span *ngIf="!createInFlight()">💾</span>
-              {{ createInFlight() ? 'Saving...' : 'Save Product' }}
-            </button>
-          </div>
-        </form>
+        <app-product-form
+          [form]="form"
+          [categories]="categories()"
+          [loading]="createInFlight()"
+          submitLabel="Save Product"
+          (submit)="createProduct()"
+          (cancel)="cancelAdd()"
+        ></app-product-form>
       </app-modal>
 
       <!-- Products List -->
@@ -263,61 +93,15 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         </div>
 
         <!-- Products Table -->
-        <div class="table-container" *ngIf="(products$ | async) as products">
+        <div *ngIf="(products$ | async) as products">
           <ng-container *ngIf="!error(); else productErrorState">
             <div *ngIf="products.items.length > 0; else emptyState">
-              <table class="products-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>SKU</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Inventory</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let product of products.items" class="product-row">
-                    <td class="product-name">{{ product.name }}</td>
-                    <td class="product-sku">
-                      <code>{{ product.sku }}</code>
-                    </td>
-                    <td class="product-description">
-                      {{ product.description || 'No description' }}
-                    </td>
-                    <td class="product-category">
-                      {{ getCategoryName(product.categoryId) }}
-                    </td>
-                    <td class="product-price">
-                      <strong>{{ product.price.amount | currency : product.price.currency }}</strong>
-                    </td>
-                    <td class="product-inventory">
-                      <span
-                        [class.inventory-low]="product.inventory > 0 && product.inventory <= 5"
-                        [class.inventory-out]="product.inventory === 0"
-                        [class.inventory-good]="product.inventory > 5"
-                      >
-                        {{ product.inventory }}
-                      </span>
-                    </td>
-                    <td class="product-status">
-                      <span
-                        class="status-badge"
-                        [class.status-in-stock]="product.inventory > 0"
-                        [class.status-out-of-stock]="product.inventory === 0"
-                      >
-                        {{ product.inventory > 0 ? 'In Stock' : 'Out of Stock' }}
-                      </span>
-                    </td>
-                    <td class="product-actions">
-                      <button class="btn-edit" (click)="startEdit(product)">✏️ Edit</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <app-product-list
+                [products]="products.items"
+                [getCategoryName]="getCategoryName.bind(this)"
+                (edit)="startEdit($event)"
+                (delete)="deleteProduct($event)"
+              ></app-product-list>
               <div class="pagination-controls">
                 <button
                   class="btn-secondary"
@@ -544,11 +328,6 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
   `,
   styles: [
     `
-      .products-page {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
-      }
 
       .page-header {
         display: flex;
@@ -595,56 +374,6 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-      }
-
-      .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-      }
-
-      .form-row label {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .form-row label span {
-        font-weight: 600;
-        color: var(--premium-onyx);
-        font-size: 0.875rem;
-      }
-
-      .form-row input,
-      .form-row textarea,
-      .form-row select {
-        padding: 0.75rem;
-        border: 1px solid var(--premium-silver);
-        border-radius: 0.5rem;
-        background: #fff;
-        color: var(--premium-onyx);
-        font-size: 1rem;
-        transition: all 0.2s;
-      }
-
-      .form-row input:focus,
-      .form-row textarea:focus,
-      .form-row select:focus {
-        outline: none;
-        border-color: var(--premium-gold);
-        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
-      }
-
-      .form-row small {
-        color: #ef4444;
-        font-size: 0.75rem;
-      }
-
-      .form-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-        margin-top: 1rem;
       }
 
       .panel-header {
@@ -722,62 +451,6 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         pointer-events: none;
       }
 
-      .pagination-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        align-items: center;
-        justify-content: flex-end;
-        margin-top: 1rem;
-      }
-
-      .page-info {
-        color: var(--premium-titanium);
-        font-weight: 600;
-      }
-
-      .page-size-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--premium-titanium);
-        font-size: 0.875rem;
-      }
-
-      .page-size-select {
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
-        border: 1px solid var(--premium-silver);
-        background: #fff;
-        color: var(--premium-onyx);
-      }
-
-      .loading-state,
-      .error-state,
-      .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-      }
-
-      .spinner {
-        width: 48px;
-        height: 48px;
-        border: 4px solid var(--premium-silver);
-        border-top-color: var(--premium-rose-gold);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1rem;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .error-state {
-        color: #ef4444;
-      }
 
       .error-icon {
         font-size: 3rem;
@@ -785,59 +458,6 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         margin-bottom: 1rem;
       }
 
-      .empty-icon {
-        font-size: 4rem;
-        opacity: 0.5;
-        margin-bottom: 1rem;
-      }
-
-      .empty-state h3 {
-        margin: 0 0 0.5rem 0;
-        color: var(--premium-onyx);
-      }
-
-      .empty-state p {
-        margin: 0 0 1.5rem 0;
-        color: var(--premium-titanium);
-      }
-
-      .table-container {
-        overflow-x: auto;
-      }
-
-      .products-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .products-table thead {
-        background: var(--premium-moonstone);
-      }
-
-      .products-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--premium-titanium);
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 2px solid var(--premium-silver);
-      }
-
-      .products-table td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--premium-silver);
-        color: var(--premium-onyx);
-      }
-
-      .product-row {
-        transition: background 0.2s;
-      }
-
-      .product-row:hover {
-        background: var(--premium-moonstone);
-      }
 
       .product-actions {
         text-align: center;
@@ -945,46 +565,6 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         color: #ef4444;
       }
 
-      .btn-primary,
-      .btn-secondary {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .btn-primary {
-        background: linear-gradient(120deg, var(--premium-gold), var(--premium-rose-gold));
-        color: #fff;
-        box-shadow: 0 10px 30px rgba(183, 110, 121, 0.3);
-      }
-
-      .btn-primary:hover:not(:disabled) {
-        opacity: 0.9;
-        transform: translateY(-2px);
-        box-shadow: 0 12px 35px rgba(183, 110, 121, 0.4);
-      }
-
-      .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .btn-secondary {
-        background: var(--premium-moonstone);
-        color: var(--premium-onyx);
-        border: 1px solid var(--premium-silver);
-      }
-
-      .btn-secondary:hover {
-        background: var(--premium-silver);
-        border-color: var(--premium-gold);
-      }
 
       @media (max-width: 768px) {
         .products-page {
