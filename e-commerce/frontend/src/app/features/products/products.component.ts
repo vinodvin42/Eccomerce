@@ -372,23 +372,15 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 
       <!-- Edit Product Modal -->
       <app-modal [isOpen]="editingProductId() !== null" title="Edit Product" (closeModal)="cancelEdit()">
-        <form [formGroup]="editForm" (ngSubmit)="updateProduct(editingProductId()!)" class="product-form">
+        <form *ngIf="editForm && editForm.get('hsnCode') && editForm.get('group') && editForm.get('grossWeight')" [formGroup]="editForm" (ngSubmit)="updateProduct(editingProductId()!)" class="product-form">
           <div class="form-row">
             <label>
-              <span>Name *</span>
-              <input formControlName="name" type="text" />
+              <span>Product Name *</span>
+              <input formControlName="name" type="text" placeholder="Enter product name" />
             </label>
             <label>
               <span>SKU *</span>
-              <input formControlName="sku" type="text" />
-            </label>
-            <label>
-              <span>Price (₹) *</span>
-              <input formControlName="price" type="number" step="0.01" min="0" />
-            </label>
-            <label>
-              <span>Inventory *</span>
-              <input formControlName="inventory" type="number" min="0" />
+              <input formControlName="sku" type="text" placeholder="Enter SKU" />
             </label>
             <label>
               <span>Category</span>
@@ -401,21 +393,149 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
             </label>
           </div>
           <div class="form-row">
-            <label class="full-width">
+            <label>
               <span>Description</span>
-              <textarea formControlName="description" rows="2"></textarea>
+              <textarea formControlName="description" placeholder="Enter product description" rows="3"></textarea>
             </label>
           </div>
           <div class="form-row">
-            <label class="full-width">
+            <label>
               <span>Image URL</span>
               <input formControlName="imageUrl" type="url" placeholder="https://example.com/image.jpg" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Price (₹) *</span>
+              <input formControlName="price" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+            <label>
+              <span>Inventory *</span>
+              <input formControlName="inventory" type="number" min="0" placeholder="0" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Net Wt (g)</span>
+              <input formControlName="weight" type="number" step="0.001" min="0" placeholder="0.000" />
+            </label>
+            <label>
+              <span>Material</span>
+              <input formControlName="material" type="text" placeholder="e.g., Gold, Silver" />
+            </label>
+            <label>
+              <span>Purity</span>
+              <input formControlName="purity" type="text" placeholder="e.g., 22K, 18K, 925" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Stone Type</span>
+              <input formControlName="stoneType" type="text" placeholder="e.g., Diamond, Ruby" />
+            </label>
+            <label>
+              <span>Size</span>
+              <input formControlName="size" type="text" placeholder="e.g., Ring size, Chain length" />
+            </label>
+            <label>
+              <span>Color</span>
+              <input formControlName="color" type="text" placeholder="e.g., Yellow Gold, White Gold" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Brand</span>
+              <input formControlName="brand" type="text" placeholder="Brand or manufacturer" />
+            </label>
+            <label>
+              <span>Certification</span>
+              <input formControlName="certification" type="text" placeholder="Certification details" />
+            </label>
+            <label>
+              <span>Warranty Period</span>
+              <input formControlName="warrantyPeriod" type="text" placeholder="e.g., 1 Year, Lifetime" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Origin</span>
+              <input formControlName="origin" type="text" placeholder="Country of manufacture" />
+            </label>
+            <label>
+              <span>HSN Code</span>
+              <input formControlName="hsnCode" type="text" placeholder="HSN Code for taxation" />
+            </label>
+            <label>
+              <span>Group</span>
+              <input formControlName="group" type="text" placeholder="e.g., Gold, Silver, Rose Gold" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Gross Weight (g)</span>
+              <input formControlName="grossWeight" type="number" step="0.001" min="0" placeholder="0.000" />
+            </label>
+            <label>
+              <span>Stone Weight (g)</span>
+              <input formControlName="stoneWeight" type="number" step="0.001" min="0" placeholder="0.000" />
+            </label>
+            <label>
+              <span>Rate/g (₹)</span>
+              <input formControlName="ratePerGram" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Wastage %</span>
+              <input formControlName="wastagePercent" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+            <label>
+              <span>Metal Value (₹)</span>
+              <input formControlName="metalValue" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+            <label>
+              <span>Wastage Value (₹)</span>
+              <input formControlName="wastageValue" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Making Charges (₹)</span>
+              <input formControlName="makingCharges" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+            <label>
+              <span>Stone Charges (₹)</span>
+              <input formControlName="stoneCharges" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+            <label>
+              <span>GST %</span>
+              <input formControlName="gstPercent" type="number" step="0.01" min="0" placeholder="0.00" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              <span>Gender</span>
+              <select formControlName="gender">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Unisex">Unisex</option>
+              </select>
+            </label>
+            <label>
+              <span>Ready to Deliver</span>
+              <select formControlName="readyToDeliver">
+                <option [value]="false">No</option>
+                <option [value]="true">Yes</option>
+              </select>
             </label>
           </div>
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
             <button type="submit" class="btn-primary" [disabled]="editForm.invalid || updateInFlight()">
-              {{ updateInFlight() ? 'Saving...' : 'Save' }}
+              <span *ngIf="updateInFlight()">⏳</span>
+              <span *ngIf="!updateInFlight()">💾</span>
+              {{ updateInFlight() ? 'Saving...' : 'Save Product' }}
             </button>
           </div>
         </form>
@@ -888,8 +1008,8 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 })
 export class ProductsComponent implements OnInit {
   products$!: Observable<ProductListResponse>;
-  form: FormGroup;
-  editForm: FormGroup;
+  form!: FormGroup;
+  editForm!: FormGroup;
   private readonly search$ = new BehaviorSubject<string | undefined>(undefined);
   private readonly categoryFilter$ = new BehaviorSubject<string>('');
   private readonly stockFilter$ = new BehaviorSubject<'all' | 'in' | 'low' | 'out'>('all');
@@ -939,6 +1059,21 @@ export class ProductsComponent implements OnInit {
       certification: [''],
       warrantyPeriod: [''],
       origin: [''],
+      // Additional jewelry-specific fields
+      hsnCode: [''],
+      grossWeight: [null, Validators.min(0)],
+      stoneWeight: [null, Validators.min(0)],
+      ratePerGram: [null, Validators.min(0)],
+      group: [''],
+      // Pricing and calculation fields
+      wastagePercent: [null, Validators.min(0)],
+      metalValue: [null, Validators.min(0)],
+      wastageValue: [null, Validators.min(0)],
+      makingCharges: [null, Validators.min(0)],
+      stoneCharges: [null, Validators.min(0)],
+      gstPercent: [null, Validators.min(0)],
+      gender: [''],
+      readyToDeliver: [false],
     });
 
     this.editForm = fb.group({
