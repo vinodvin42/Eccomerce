@@ -1032,16 +1032,40 @@ export class CheckoutComponent implements OnInit {
     this.cartTotal$ = this.store.select(selectCartTotal);
     
     // Initialize finalTotal$ observable that reacts to cart, shipping, and discount changes
+    // Calculate from cart items breakdown to ensure accuracy
     this.finalTotal$ = combineLatest([
+      this.cartItems$,
       this.cartTotal$,
-      toObservable(this.appliedDiscount),
-      toObservable(this.selectedShippingMethod),
+      toObservable(this.appliedDiscount).pipe(map(d => d || null)),
+      toObservable(this.selectedShippingMethod).pipe(map(s => s || null)),
     ]).pipe(
-      map(([total, discount, shipping]) => {
-        if (!total || total <= 0) return 0;
+      map(([cartItems, cartTotal, discount, shipping]) => {
+        if (!cartItems || cartItems.length === 0) return 0;
+        
+        // Calculate total from breakdown if available, otherwise use cart total
+        const breakdown = this.getTotalBreakdown(cartItems);
+        let baseTotal = 0;
+        
+        if (breakdown) {
+          // breakdown.subtotal is the subtotal before GST for all items
+          // breakdown.gstAmount is the GST for all items
+          // Final base total = subtotal + GST
+          baseTotal = breakdown.subtotal + (breakdown.gstAmount || 0);
+        } else {
+          // Fallback to cart total (which should already include everything)
+          baseTotal = cartTotal || 0;
+        }
+        
+        if (baseTotal <= 0) return 0;
+        
         const discountAmount = discount?.discountAmount || 0;
-        const shippingCost = shipping?.baseCost.amount || 0;
-        return Math.max(0, total + shippingCost - discountAmount);
+        const shippingCost = shipping?.baseCost?.amount || 0;
+        
+        // Calculate final total: base + shipping - discount
+        const finalTotal = baseTotal + shippingCost - discountAmount;
+        
+        // Ensure we don't return negative values, but allow 0 if discount exceeds total
+        return Math.max(0, Math.round(finalTotal * 100) / 100);
       })
     );
 
@@ -1358,15 +1382,8 @@ export class CheckoutComponent implements OnInit {
       });
     }
 
-    // Add total
-    this.finalTotal$.pipe(take(1)).subscribe(total => {
-      items.push({ 
-        label: 'Total', 
-        value: total || 0, 
-        currency: 'INR',
-        isTotal: true 
-      });
-    });
+    // Note: Total is handled by CheckoutSummaryComponent via [total] input
+    // Don't add it here to avoid async subscription issues
 
     return items;
   }

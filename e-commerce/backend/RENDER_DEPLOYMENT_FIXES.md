@@ -45,6 +45,32 @@ REDIS_URL=<your-redis-url> (optional)
 cd e-commerce/backend && pip install -r requirements.txt && alembic upgrade head
 ```
 
+### Seed Data (Run After First Deployment)
+
+After the first successful deployment, you need to run the seed script to populate the database with initial data.
+
+**Option 1: Via Render Shell (Recommended)**
+1. Go to Render Dashboard → Your Service
+2. Click "Shell" tab
+3. Run:
+   ```bash
+   cd e-commerce/backend
+   python scripts/seed_data.py
+   ```
+
+**Option 2: Add to Build Command (One-time)**
+Temporarily modify build command to:
+```
+cd e-commerce/backend && pip install -r requirements.txt && alembic upgrade head && python scripts/seed_data.py
+```
+Then change it back after first deployment.
+
+**Option 3: Create Admin Only**
+If you just need an admin user:
+```bash
+python scripts/create_admin.py
+```
+
 ### Start Command
 ```
 cd e-commerce/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -90,8 +116,11 @@ e-commerce/backend
 
 1. ✅ Database driver fixed
 2. ✅ Stripe import fixed
-3. ⏳ Deploy and test
-4. ⏳ Configure CORS for frontend
-5. ⏳ Set up environment variables
-6. ⏳ Run database migrations
+3. ✅ Email validator added
+4. ✅ Python multipart added
+5. ⏳ Deploy and test
+6. ⏳ Run seed data (see RENDER_SEED_DATA.md)
+7. ⏳ Configure CORS for frontend
+8. ⏳ Set up environment variables
+9. ⏳ Run database migrations
 
