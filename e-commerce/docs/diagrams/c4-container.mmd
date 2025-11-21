@@ -1,0 +1,42 @@
+﻿%% C4 Container Diagram
+%% Render with: mmdc -i c4-container.mmd -o c4-container.svg
+
+C4Container
+    title E-Commerce Platform Container View
+    Person(customer, "Shopper")
+    Person(admin, "Tenant Admin")
+
+    Container(apigw, "API Gateway", "Kong/NGINX", "Terminates TLS, validates JWT, enforces tenant routing and rate limits.")
+    Container(spa, "Web UI", "Angular 17", "SSR-enabled SPA served from CDN and Cloud Storage.")
+    Container(cli, "CLI Tool", "Python Typer", "Admin automation & bootstrap tasks.")
+    Container(catalog, "Catalog Service", "FastAPI", "Product, category, inventory management.")
+    Container(order, "Order Service", "FastAPI", "Cart, checkout, fulfillment, saga orchestration.")
+    Container(user, "User Service", "FastAPI", "Tenants, users, RBAC, audit.")
+    Container(payment, "Payment Service", "FastAPI", "Payment intent orchestration, PSP integrations.")
+    Container(notification, "Notification Service", "FastAPI + Celery", "Email/SMS/push dispatch.")
+    ContainerDb(postgres, "PostgreSQL Cluster", "SQL", "Multi-tenant operational data.")
+    ContainerDb(redis, "Redis Cluster", "RESP", "Caching, session, rate limit counters.")
+    Container(queue, "RabbitMQ", "AMQP", "Async domain events, background jobs.")
+
+    Rel(customer, spa, "Uses", "HTTPS/OIDC")
+    Rel(admin, spa, "Configures", "HTTPS/OIDC")
+    Rel(admin, cli, "Automates", "mTLS HTTPS")
+    Rel(spa, apigw, "REST/GraphQL", "JWT + X-Tenant-ID")
+    Rel(cli, apigw, "REST", "Client Credentials")
+    Rel(apigw, catalog, "Routes")
+    Rel(apigw, order, "Routes")
+    Rel(apigw, user, "Routes")
+    Rel(apigw, payment, "Routes")
+    Rel(apigw, notification, "Routes (callbacks)")
+
+    Rel(catalog, postgres, "R/W")
+    Rel(order, postgres, "R/W")
+    Rel(user, postgres, "R/W")
+    Rel(payment, postgres, "R/W")
+    Rel(notification, postgres, "R/W metadata")
+
+    Rel(catalog, redis, "Cache lookups")
+    Rel(order, redis, "Session + cache")
+    Rel(notification, queue, "Publishes jobs", "AMQP")
+    Rel(order, queue, "Publishes domain events", "AMQP")
+    Rel(queue, notification, "Consumes jobs")

@@ -1,0 +1,353 @@
+﻿{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "E-Commerce Platform API",
+    "version": "1.0.0",
+    "description": "Multi-tenant commerce APIs powering Python FastAPI services and Angular clients. All requests must include the X-Tenant-ID header and correlation identifiers."
+  },
+  "servers": [
+    { "url": "https://api.prod.example.com", "description": "Production" },
+    { "url": "https://api.stg.example.com", "description": "Staging" }
+  ],
+  "tags": [
+    { "name": "Products", "description": "Manage catalog items and inventory." },
+    { "name": "Orders", "description": "Place and track customer orders." },
+    { "name": "Tenants", "description": "Provision tenant organizations and metadata." },
+    { "name": "Returns", "description": "Reverse logistics and refunds." }
+  ],
+  "paths": {
+    "/api/v1/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "List products",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 20 } },
+          { "name": "categoryId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paged product result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Product" }
+                    },
+                    "page": { "type": "integer" },
+                    "pageSize": { "type": "integer" },
+                    "total": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        },
+        "security": [ { "OAuth2": ["catalog.read"] } ]
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Create product",
+        "parameters": [ { "$ref": "#/components/parameters/TenantId" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ProductCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        },
+        "security": [ { "OAuth2": ["catalog.write"] } ]
+      }
+    },
+    "/api/v1/products/{productId}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Fetch product",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Product", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        },
+        "security": [ { "OAuth2": ["catalog.read"] } ]
+      }
+    },
+    "/api/v1/orders": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create order",
+        "parameters": [ { "$ref": "#/components/parameters/TenantId" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/OrderCreate" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Order created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "409": { "description": "Inventory conflict" }
+        },
+        "security": [ { "OAuth2": ["orders.write"] } ]
+      }
+    },
+    "/api/v1/orders/{orderId}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get order",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "name": "orderId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Order", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        },
+        "security": [ { "OAuth2": ["orders.read"] } ]
+      }
+    },
+    "/api/v1/returns": {
+      "post": {
+        "tags": ["Returns"],
+        "summary": "Create return request",
+        "parameters": [ { "$ref": "#/components/parameters/TenantId" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ReturnRequest" } }
+          }
+        },
+        "responses": {
+          "202": { "description": "Return accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReturnRequest" } } } }
+        },
+        "security": [ { "OAuth2": ["orders.write"] } ]
+      }
+    },
+    "/api/v1/tenants": {
+      "post": {
+        "tags": ["Tenants"],
+        "summary": "Provision tenant",
+        "parameters": [ { "$ref": "#/components/parameters/CorrelationId" } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TenantCreate" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tenant created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tenant" } } } }
+        },
+        "security": [ { "OAuth2": ["tenants.write"] } ]
+      },
+      "get": {
+        "tags": ["Tenants"],
+        "summary": "List tenants",
+        "responses": {
+          "200": {
+            "description": "Tenant list",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Tenant" } } } }
+          }
+        },
+        "security": [ { "OAuth2": ["tenants.read"] } ]
+      }
+    },
+    "/api/v1/tenants/{tenantId}": {
+      "get": {
+        "tags": ["Tenants"],
+        "summary": "Get tenant",
+        "parameters": [ { "name": "tenantId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+        "responses": {
+          "200": { "description": "Tenant", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tenant" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        },
+        "security": [ { "OAuth2": ["tenants.read"] } ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "OAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://idp.example.com/oauth2/v1/authorize",
+            "tokenUrl": "https://idp.example.com/oauth2/v1/token",
+            "scopes": {
+              "catalog.read": "Read catalog data",
+              "catalog.write": "Modify catalog data",
+              "orders.read": "Read orders",
+              "orders.write": "Create/update orders",
+              "tenants.read": "Read tenant metadata",
+              "tenants.write": "Provision tenants"
+            }
+          },
+          "clientCredentials": {
+            "tokenUrl": "https://idp.example.com/oauth2/v1/token",
+            "scopes": {
+              "tenants.write": "Provision tenants via automation"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "TenantId": {
+        "name": "X-Tenant-ID",
+        "in": "header",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "Identifies the tenant context for the request."
+      },
+      "CorrelationId": {
+        "name": "X-Correlation-ID",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string" }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid token",
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } }
+      },
+      "BadRequest": {
+        "description": "Validation failure",
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } }
+      }
+    },
+    "schemas": {
+      "AuditMetadata": {
+        "type": "object",
+        "properties": {
+          "createdBy": { "type": "string", "format": "uuid" },
+          "createdDate": { "type": "string", "format": "date-time" },
+          "modifiedBy": { "type": "string", "format": "uuid" },
+          "modifiedDate": { "type": "string", "format": "date-time" }
+        },
+        "required": ["createdBy", "createdDate", "modifiedBy", "modifiedDate"]
+      },
+      "Money": {
+        "type": "object",
+        "properties": {
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "amount": { "type": "number", "format": "double" }
+        },
+        "required": ["currency", "amount"]
+      },
+      "Product": {
+        "type": "object",
+        "allOf": [
+          { "$ref": "#/components/schemas/ProductCreate" },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "audit": { "$ref": "#/components/schemas/AuditMetadata" }
+            }
+          }
+        ]
+      },
+      "ProductCreate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "sku": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "$ref": "#/components/schemas/Money" },
+          "inventory": { "type": "integer", "minimum": 0 },
+          "categoryId": { "type": "string", "format": "uuid" }
+        },
+        "required": ["name", "sku", "price", "inventory"]
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "productId": { "type": "string", "format": "uuid" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "unitPrice": { "$ref": "#/components/schemas/Money" }
+        },
+        "required": ["productId", "quantity", "unitPrice"]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "tenantId": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["PendingPayment", "Confirmed", "Cancelled"] },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
+          "total": { "$ref": "#/components/schemas/Money" },
+          "audit": { "$ref": "#/components/schemas/AuditMetadata" }
+        },
+        "required": ["id", "tenantId", "status", "items", "total", "audit"]
+      },
+      "OrderCreate": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" }, "minItems": 1 },
+          "customerId": { "type": "string", "format": "uuid" },
+          "paymentMethodId": { "type": "string", "format": "uuid" },
+          "shippingAddress": { "type": "string" }
+        },
+        "required": ["items", "customerId", "paymentMethodId"]
+      },
+      "ReturnRequest": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "orderId": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string" },
+          "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected", "Refunded"] }
+        },
+        "required": ["orderId", "reason"]
+      },
+      "Tenant": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "status": { "type": "string", "enum": ["Active", "Suspended"] },
+          "audit": { "$ref": "#/components/schemas/AuditMetadata" }
+        },
+        "required": ["id", "name", "slug", "status", "audit"]
+      },
+      "TenantCreate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "primaryContact": { "type": "string", "format": "email" }
+        },
+        "required": ["name", "slug", "primaryContact"]
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "type": "integer" },
+          "detail": { "type": "string" },
+          "instance": { "type": "string" }
+        }
+      }
+    }
+  }
+}

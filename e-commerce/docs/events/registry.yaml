@@ -1,0 +1,335 @@
+version: 1
+description: Domain event registry for e-commerce platform
+
+events:
+  # Order Events
+  - name: order.created
+    version: "1.0"
+    description: "Order created and pending payment"
+    schema:
+      $id: https://example.com/events/order.created.json
+      type: object
+      required: [orderId, tenantId, customerId, amount, currency, timestamp]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        timestamp:
+          type: string
+          format: date-time
+    consumers:
+      - payment-service
+      - notification-service
+
+  - name: order.pending_payment
+    version: "1.0"
+    description: "Order awaiting payment processing"
+    schema:
+      $id: https://example.com/events/order.pending_payment.json
+      type: object
+      required: [orderId, tenantId, amount, currency]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+    consumers:
+      - payment-service
+
+  - name: order.confirmed
+    version: "1.0"
+    description: "Order confirmed and payment processed"
+    schema:
+      $id: https://example.com/events/order.confirmed.json
+      type: object
+      required: [orderId, tenantId, status, customerId]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [Confirmed]
+        customerId:
+          type: string
+          format: uuid
+        totalAmount:
+          type: number
+        currency:
+          type: string
+    consumers:
+      - notification-service
+      - inventory-service
+
+  - name: order.cancelled
+    version: "1.0"
+    description: "Order cancelled"
+    schema:
+      $id: https://example.com/events/order.cancelled.json
+      type: object
+      required: [orderId, tenantId, reason]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+    consumers:
+      - inventory-service
+      - notification-service
+
+  # Payment Events
+  - name: payment.intent_created
+    version: "1.0"
+    description: "Payment intent created for an order"
+    schema:
+      $id: https://example.com/events/payment.intent_created.json
+      type: object
+      required: [transactionId, orderId, tenantId, amount, currency]
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        provider:
+          type: string
+    consumers:
+      - analytics-service
+
+  - name: payment.succeeded
+    version: "1.0"
+    description: "Payment successfully processed"
+    schema:
+      $id: https://example.com/events/payment.succeeded.json
+      type: object
+      required: [transactionId, orderId, tenantId, amount, currency]
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        provider:
+          type: string
+    consumers:
+      - order-service
+      - analytics-service
+
+  - name: payment.failed
+    version: "1.0"
+    description: "Payment processing failed"
+    schema:
+      $id: https://example.com/events/payment.failed.json
+      type: object
+      required: [transactionId, orderId, tenantId, failureReason]
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        failureReason:
+          type: string
+    consumers:
+      - notification-service
+
+  # Inventory Events
+  - name: inventory.reserved
+    version: "1.0"
+    description: "Inventory reserved for an order"
+    schema:
+      $id: https://example.com/events/inventory.reserved.json
+      type: object
+      required: [orderId, tenantId, items]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+    consumers:
+      - analytics-service
+
+  # Product Events
+  - name: product.created
+    version: "1.0"
+    description: "New product created"
+    schema:
+      $id: https://example.com/events/product.created.json
+      type: object
+      required: [productId, tenantId, sku, name]
+      properties:
+        productId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+    consumers:
+      - search-service
+      - analytics-service
+
+  - name: product.inventory_low
+    version: "1.0"
+    description: "Product inventory below threshold"
+    schema:
+      $id: https://example.com/events/product.inventory_low.json
+      type: object
+      required: [productId, tenantId, currentInventory, threshold]
+      properties:
+        productId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        currentInventory:
+          type: integer
+        threshold:
+          type: integer
+    consumers:
+      - notification-service
+
+  # User Events
+  - name: user.registered
+    version: "1.0"
+    description: "New user registered"
+    schema:
+      $id: https://example.com/events/user.registered.json
+      type: object
+      required: [userId, email, tenantId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        tenantId:
+          type: string
+          format: uuid
+        role:
+          type: string
+    consumers:
+      - notification-service
+
+  - name: user.updated
+    version: "1.0"
+    description: "User profile updated"
+    schema:
+      $id: https://example.com/events/user.updated.json
+      type: object
+      required: [userId, tenantId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        changes:
+          type: object
+    consumers:
+      - audit-service
+
+  # Tenant Events
+  - name: tenant.provisioned
+    version: "1.0"
+    description: "New tenant provisioned"
+    schema:
+      $id: https://example.com/events/tenant.provisioned.json
+      type: object
+      required: [tenantId, name, slug]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+    consumers:
+      - notification-service
+      - analytics-service
+
+  - name: tenant.suspended
+    version: "1.0"
+    description: "Tenant suspended"
+    schema:
+      $id: https://example.com/events/tenant.suspended.json
+      type: object
+      required: [tenantId, reason]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+    consumers:
+      - notification-service

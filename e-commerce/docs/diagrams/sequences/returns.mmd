@@ -1,0 +1,28 @@
+﻿%% Sequence Diagram - Return & Refund Flow
+%% Render with: mmdc -i returns.mmd -o returns.svg
+
+sequenceDiagram
+    autonumber
+    participant U as Shopper
+    participant UI as Angular Web UI
+    participant GW as API Gateway
+    participant ORD as Order Service
+    participant CAT as Catalog Service
+    participant PAY as Payment Service
+    participant MQ as RabbitMQ
+    participant NOTIF as Notification Service
+
+    U->>UI: Initiate return request
+    UI->>GW: POST /returns
+    GW->>ORD: Forward request (tenant scoped)
+    ORD->>CAT: Release inventory hold
+    CAT-->>ORD: Inventory adjusted
+    ORD->>PAY: Request refund
+    PAY->>PSP: Trigger refund transaction
+    PSP-->>PAY: Refund success webhook
+    PAY-->>ORD: Update refund status
+    ORD->>MQ: Publish return.completed event
+    MQ-->>NOTIF: Send refund confirmation
+    NOTIF-->>U: Notify refund issued
+    ORD-->>GW: Return ticket response
+    GW-->>UI: Return ticket id + status

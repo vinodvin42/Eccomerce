@@ -1,0 +1,22 @@
+﻿%% Sequence Diagram - Tenant Provisioning
+%% Render with: mmdc -i tenant-provisioning.mmd -o tenant-provisioning.svg
+
+sequenceDiagram
+    autonumber
+    participant SA as Super Admin CLI
+    participant GW as API Gateway
+    participant USER as User Service
+    participant IDP as External IdP
+    participant CATALOG as Catalog Service
+    participant NOTIF as Notification Service
+
+    SA->>GW: POST /tenants (client credentials)
+    GW->>USER: Forward create tenant request
+    USER->>USER: Create tenant record + audit fields
+    USER->>IDP: Provision tenant directory via SCIM
+    IDP-->>USER: Tenant + admin identity created
+    USER->>CATALOG: Seed default catalogs/pricing
+    USER->>NOTIF: Publish tenant.provisioned event
+    NOTIF-->>Admin: Send onboarding email with activation link
+    USER-->>GW: Return tenant id + bootstrap secrets
+    GW-->>SA: Response consumed by CLI for follow-up commands

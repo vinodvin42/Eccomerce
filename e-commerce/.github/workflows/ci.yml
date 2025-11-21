@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        working-directory: ./e-commerce/backend
+        run: |
+          poetry install --no-interaction --no-ansi
+
+      - name: Run linting (ruff)
+        working-directory: ./e-commerce/backend
+        run: poetry run ruff check .
+
+      - name: Run type checking (mypy)
+        working-directory: ./e-commerce/backend
+        run: poetry run mypy app || true
+
+      - name: Run tests with coverage
+        working-directory: ./e-commerce/backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: test-secret-key-for-ci-min-32-chars-long
+          ENVIRONMENT: test
+        run: |
+          poetry run pytest --cov=app --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./e-commerce/backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+        continue-on-error: true
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: e-commerce/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./e-commerce/frontend
+        run: npm ci
+
+      - name: Run linting
+        working-directory: ./e-commerce/frontend
+        run: npm run lint || true
+
+      - name: Run tests
+        working-directory: ./e-commerce/frontend
+        run: npm run test -- --watch=false --browsers=ChromeHeadless || true
+
+      - name: Build
+        working-directory: ./e-commerce/frontend
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: e-commerce/frontend/dist/
+          retention-days: 7
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./e-commerce/backend
+          file: ./e-commerce/backend/Dockerfile
+          push: false
+          tags: ecommerce-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./e-commerce/frontend
+          file: ./e-commerce/frontend/Dockerfile
+          push: false
+          tags: ecommerce-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

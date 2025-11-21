@@ -1,0 +1,30 @@
+﻿%% Sequence Diagram - Checkout Flow
+%% Render with: mmdc -i checkout.mmd -o checkout.svg
+
+sequenceDiagram
+    autonumber
+    participant U as Shopper
+    participant UI as Angular Web UI
+    participant GW as API Gateway
+    participant ORD as Order Service
+    participant CAT as Catalog Service
+    participant PAY as Payment Service
+    participant MQ as RabbitMQ
+    participant NOTIF as Notification Service
+    participant PSP as Payment Provider
+
+    U->>UI: Review cart & click Checkout
+    UI->>GW: POST /orders (JWT, X-Tenant-ID)
+    GW->>ORD: Validate scopes, forward request
+    ORD->>CAT: Reserve inventory (gRPC)
+    CAT-->>ORD: Inventory reserved
+    ORD->>MQ: Publish order.pending_payment
+    MQ-->>PAY: Consume payment task
+    PAY->>PSP: Create payment intent
+    PSP-->>PAY: Payment confirmed
+    PAY->>ORD: Update payment status
+    ORD->>MQ: Publish order.confirmed
+    MQ-->>NOTIF: Dispatch confirmation email/SMS
+    NOTIF-->>U: Send order confirmation
+    ORD-->>GW: 201 Created response
+    GW-->>UI: Return order id + status

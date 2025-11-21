@@ -1,0 +1,35 @@
+﻿%% C4 Context Diagram
+%% Render with: mmdc -i c4-context.mmd -o c4-context.svg
+%% Describes high-level actors interacting with the e-commerce platform
+
+C4Context
+    title E-Commerce Platform Context
+    Enterprise_Boundary(c0, "Tenant Organization") {
+        Person(customer, "Shopper", "Browses catalog, manages cart, places orders.")
+        Person(admin, "Tenant Admin", "Configures catalog, pricing, and users.")
+        System(system_ui, "Web & Mobile UI", "Angular SPA + mobile shell served via CDN.")
+        System(cli, "CLI Tool", "Python Typer CLI for tenant admins & ops tasks.")
+        System_Boundary(s1, "E-Commerce Platform") {
+            System_Ext(gateway, "API Gateway", "JWT validation, rate limiting, tenant resolution.")
+            System(backend, "Backend Services", "FastAPI microservices for catalog, orders, payments, users.")
+            SystemDb(postgres, "PostgreSQL Cluster", "Multi-tenant operational data store.")
+            System(redis, "Redis Cluster", "Caching, session storage, rate limiting.")
+            System(queue, "RabbitMQ", "Async job & event transport.")
+            System_Ext(secrets, "Custom Secrets Service", "Distributes short-lived secrets to services.")
+            System_Ext(idp, "External IdP (Okta/AD)", "Primary authentication & SCIM provisioning.")
+            System_Ext(psp, "Payment Service Providers", "Processes card/bank payments, webhooks.")
+        }
+    }
+
+    Rel(customer, system_ui, "Uses", "HTTPS, OAuth2/OIDC")
+    Rel(admin, system_ui, "Configures", "HTTPS")
+    Rel(admin, cli, "Automates ops", "mTLS gRPC/REST")
+    Rel(system_ui, gateway, "REST/GraphQL calls", "JWT + X-Tenant-ID")
+    Rel(cli, gateway, "REST calls", "Client credentials")
+    Rel(gateway, backend, "Routes requests", "mTLS HTTP/2")
+    Rel(backend, postgres, "Reads/Writes", "SQL (row-level security)")
+    Rel(backend, redis, "Caches", "RESP")
+    Rel(backend, queue, "Publishes/Consumes events", "AMQP")
+    Rel(backend, idp, "Delegates auth, sync users", "OIDC/SCIM")
+    Rel(backend, secrets, "Fetches secrets", "mTLS HTTPS")
+    Rel(backend, psp, "Processes payments/webhooks", "HTTPS/Webhook")
