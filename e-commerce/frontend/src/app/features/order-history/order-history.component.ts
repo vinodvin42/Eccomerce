@@ -10,6 +10,12 @@ import type { AppState } from '../../state';
 import type { Order } from '../../shared/models/order';
 import { BrandingService } from '../../core/services/branding.service';
 
+type StageKey = 'placed' | 'confirmed' | 'packed' | 'shipped';
+interface StageDescriptor {
+  key: StageKey;
+  label: string;
+}
+
 @Component({
   selector: 'app-order-history',
   standalone: true,
@@ -29,16 +35,29 @@ import { BrandingService } from '../../core/services/branding.service';
 
       <div *ngIf="!(loading$ | async)" class="orders-board">
         <article *ngFor="let order of orders$ | async" class="order-card">
-          <div class="order-card__line"></div>
-          <header>
+          <header class="order-card__header">
             <div>
-              <h3>Order #{{ order.id.slice(0, 8) }}</h3>
-              <p>Placed on {{ order.audit.createdDate | date : 'mediumDate' }}</p>
+              <p class="order-number">Order #{{ order.id.slice(0, 8) }}</p>
+              <p class="order-date">Placed on {{ order.audit.createdDate | date : 'mediumDate' }}</p>
             </div>
             <span class="status-pill" [attr.data-status]="order.status.toLowerCase()">
               {{ order.status | titlecase }}
             </span>
           </header>
+
+          <div class="order-timeline">
+            <ng-container *ngFor="let stage of stageFlow; trackBy: trackStage; let i = index">
+              <div class="timeline-step" [class.active]="isStageActive(order, stage.key)">
+                <div class="dot"></div>
+                <span>{{ stage.label }}</span>
+              </div>
+              <div
+                *ngIf="i < stageFlow.length - 1"
+                class="timeline-bar"
+                [class.active]="isStageActive(order, stageFlow[i + 1].key)"
+              ></div>
+            </ng-container>
+          </div>
 
           <dl class="order-stats">
             <div>
@@ -55,23 +74,25 @@ import { BrandingService } from '../../core/services/branding.service';
             </div>
           </dl>
 
-          <div class="items-list">
-            <div *ngFor="let item of order.items">
-              <span class="badge">{{ item.quantity }}×</span>
-              <span class="item-label">Product {{ item.productId.slice(0, 6) }}</span>
-              <span class="item-price">
-                {{ item.unitPrice.amount * item.quantity | currency : item.unitPrice.currency }}
-              </span>
+          <div class="product-callout" *ngIf="primaryItem(order) as item">
+            <div class="product-thumb">
+              <span>{{ getProductAvatar(item.productId) }}</span>
+            </div>
+            <div class="product-meta">
+              <p class="product-title">Product {{ item.productId.slice(0, 6) }}</p>
+              <p class="product-status">
+                {{ order.status === 'Confirmed' ? 'Delivered' : 'Processing' }}
+              </p>
+            </div>
+            <div class="product-total">
+              {{ item.unitPrice.amount * item.quantity | currency : item.unitPrice.currency }}
             </div>
           </div>
 
-          <footer>
-            <div class="timeline">
-              <span class="dot active"></span>
-              <span class="bar" [class.active]="true"></span>
-              <span class="dot" [class.active]="order.status !== 'PendingPayment'"></span>
-              <span class="bar" [class.active]="order.status === 'Confirmed'"></span>
-              <span class="dot" [class.active]="order.status === 'Confirmed'"></span>
+          <footer class="order-card__footer">
+            <div class="footer-info">
+              <span class="footer-label">Shipping</span>
+              <strong>{{ order.shippingAddress || 'Captured at checkout' }}</strong>
             </div>
             <a [routerLink]="['/orders', order.id]" class="btn-details">View details</a>
           </footer>
@@ -135,7 +156,7 @@ import { BrandingService } from '../../core/services/branding.service';
       }
 
       .orders-board {
-        max-width: 900px;
+        max-width: 960px;
         margin: 0 auto;
         display: flex;
         flex-direction: column;
@@ -144,39 +165,28 @@ import { BrandingService } from '../../core/services/branding.service';
 
       .order-card {
         background: #fff;
-        border-radius: 24px;
-        padding: 1.75rem;
-        position: relative;
-        box-shadow: 0 30px 70px var(--premium-shadow);
+        border-radius: 32px;
+        padding: 2rem;
+        box-shadow: 0 40px 80px rgba(15, 23, 42, 0.08);
         border: 1px solid rgba(215, 220, 226, 0.6);
       }
 
-      .order-card__line {
-        position: absolute;
-        left: 0;
-        top: 30px;
-        bottom: 30px;
-        width: 4px;
-        border-radius: 999px;
-        background: linear-gradient(180deg, var(--premium-gold), var(--premium-rose-gold));
-      }
-
-      .order-card header {
+      .order-card__header {
         display: flex;
         justify-content: space-between;
-        gap: 1rem;
-        padding-left: 1rem;
+        gap: 1.5rem;
       }
 
-      .order-card header h3 {
+      .order-number {
         margin: 0;
-        color: #11172b;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #0f172a;
       }
 
-      .order-card header p {
+      .order-date {
         margin: 0.25rem 0 0;
         color: var(--premium-titanium);
-        font-size: 0.9rem;
       }
 
       .status-pill {
@@ -203,18 +213,63 @@ import { BrandingService } from '../../core/services/branding.service';
         color: var(--premium-rose-gold);
       }
 
+      .order-timeline {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.5rem 0 1rem;
+      }
+
+      .timeline-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #cbd5f5;
+      }
+
+      .timeline-step .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #cbd5f5;
+        margin-bottom: 0.4rem;
+      }
+
+      .timeline-step.active {
+        color: #f97316;
+      }
+
+      .timeline-step.active .dot {
+        border-color: #f97316;
+        background: #f97316;
+      }
+
+      .timeline-bar {
+        flex: 1;
+        height: 2px;
+        background: #e2e8f0;
+      }
+
+      .timeline-bar.active {
+        background: linear-gradient(90deg, #fcd34d, #f97316);
+      }
+
       .order-stats {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 1rem;
-        padding: 1rem 1rem 0;
+        padding: 0;
+        margin-bottom: 1.5rem;
       }
 
       .order-stats div {
-        background: var(--premium-moonstone);
-        border-radius: 16px;
-        padding: 0.9rem;
-        text-align: center;
+        background: #f7f4ef;
+        border-radius: 18px;
+        padding: 1rem;
+        text-align: left;
       }
 
       dt {
@@ -232,65 +287,65 @@ import { BrandingService } from '../../core/services/branding.service';
         font-size: 1rem;
       }
 
-      .items-list {
-        padding: 1rem 1rem 0.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-      }
-
-      .items-list div {
+      .product-callout {
         display: grid;
         grid-template-columns: auto 1fr auto;
-        gap: 0.75rem;
         align-items: center;
-        color: var(--premium-stone);
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 1.5rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(252, 211, 77, 0.08);
+        margin-bottom: 1.25rem;
       }
 
-      .badge {
-        padding: 0.25rem 0.7rem;
-        border-radius: 999px;
-        background: var(--premium-moonstone);
-        font-weight: 600;
+      .product-thumb {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.2rem;
       }
 
-      .item-price {
+      .product-title {
+        margin: 0;
         font-weight: 600;
         color: #11172b;
       }
 
-      footer {
+      .product-status {
+        margin: 0.25rem 0 0;
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .product-total {
+        font-weight: 700;
+        color: #11172b;
+      }
+
+      .order-card__footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1rem 0;
+        gap: 1rem;
       }
 
-      .timeline {
+      .footer-info {
         display: flex;
-        align-items: center;
-        gap: 0.3rem;
+        flex-direction: column;
       }
 
-      .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #d1d5db;
-      }
-
-      .dot.active {
-        background: #f97316;
-      }
-
-      .bar {
-        width: 30px;
-        height: 2px;
-        background: #d1d5db;
-      }
-
-      .bar.active {
-        background: #f97316;
+      .footer-label {
+        color: #94a3b8;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
       }
 
       .btn-details {
@@ -330,12 +385,18 @@ import { BrandingService } from '../../core/services/branding.service';
       }
 
       @media (max-width: 768px) {
-        .order-stats {
-          grid-template-columns: 1fr;
-        }
-
         .orders-hero {
           flex-direction: column;
+        }
+
+        .order-card__footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .product-callout {
+          grid-template-columns: 1fr;
+          text-align: left;
         }
       }
     `,
@@ -345,6 +406,12 @@ export class OrderHistoryComponent implements OnInit {
   orders$: Observable<Order[]>;
   loading$: Observable<boolean>;
   tenantBrand$ = this.brandingService.tenantBrandChanges$;
+  readonly stageFlow: StageDescriptor[] = [
+    { key: 'placed', label: 'Placed' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'packed', label: 'Packed' },
+    { key: 'shipped', label: 'Shipped' },
+  ];
 
   constructor(
     private readonly store: Store<AppState>,
@@ -357,6 +424,35 @@ export class OrderHistoryComponent implements OnInit {
   ngOnInit(): void {
     // Load customer's orders - will use authenticated user's ID from backend
     this.store.dispatch(OrdersActions.loadOrders({ customerId: undefined }));
+  }
+
+  trackStage(_: number, stage: StageDescriptor): StageKey {
+    return stage.key;
+  }
+
+  isStageActive(order: Order, stage: StageKey): boolean {
+    if (order.status === 'Cancelled') {
+      return stage === 'placed';
+    }
+    switch (stage) {
+      case 'placed':
+        return true;
+      case 'confirmed':
+        return order.status !== 'PendingPayment';
+      case 'packed':
+      case 'shipped':
+        return order.status === 'Confirmed';
+      default:
+        return false;
+    }
+  }
+
+  primaryItem(order: Order) {
+    return order.items[0] ?? null;
+  }
+
+  getProductAvatar(productId: string): string {
+    return productId.slice(0, 2).toUpperCase();
   }
 }
 

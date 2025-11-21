@@ -1,4 +1,4 @@
-import { AsyncPipe, CurrencyPipe, DatePipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { Component, DestroyRef, OnInit, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -29,20 +29,56 @@ import type { User } from '../../shared/models/user';
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [ReactiveFormsModule, NgFor, NgIf, AsyncPipe, CurrencyPipe, DatePipe, ModalComponent],
+  imports: [ReactiveFormsModule, NgFor, NgIf, AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, ModalComponent],
   template: `
     <div class="orders-page">
       <!-- Header -->
-      <div class="page-header">
+      <header class="page-hero">
         <div>
-          <h1>Orders Management</h1>
-          <p class="page-subtitle">View and manage customer orders</p>
+          <p class="eyebrow">Checkout command</p>
+          <h1>Orders &amp; Fulfillment hub</h1>
+          <p class="page-subtitle">
+            Mirror the shopper checkout experience while keeping finance, CX, and logistics in the loop.
+          </p>
+          <div class="hero-tags">
+            <span>Realtime status</span>
+            <span>Multi-tenant safe</span>
+            <span>Stripe • Razorpay ready</span>
+          </div>
         </div>
-        <button class="btn-primary" (click)="showCreateForm.set(true)">
-          <span>➕</span>
-          Create Order
-        </button>
-      </div>
+        <div class="hero-actions">
+          <button class="btn-secondary ghost" type="button" (click)="refreshOrders()" [disabled]="loading()">
+            ↻ Refresh
+          </button>
+          <button class="btn-primary" type="button" (click)="showCreateForm.set(true)">
+            <span>➕</span>
+            Create order
+          </button>
+        </div>
+      </header>
+
+      <section class="insights-grid">
+        <article class="insight-card">
+          <p>Total orders</p>
+          <h3>{{ totalOrders() | number }}</h3>
+          <small>All time</small>
+        </article>
+        <article class="insight-card">
+          <p>Pending payment</p>
+          <h3>{{ ordersInsights().pending }}</h3>
+          <small>Awaiting capture</small>
+        </article>
+        <article class="insight-card">
+          <p>Confirmed</p>
+          <h3>{{ ordersInsights().confirmed }}</h3>
+          <small>Ready to fulfill</small>
+        </article>
+        <article class="insight-card highlight">
+          <p>Checkout revenue (current view)</p>
+          <h3>{{ ordersInsights().revenue | currency : 'USD' }}</h3>
+          <small>Avg {{ ordersInsights().average | currency : 'USD' }} per order</small>
+        </article>
+      </section>
 
       <!-- Create Order Modal -->
       <app-modal [isOpen]="showCreateForm()" title="Create New Order" (closeModal)="cancelCreate()">
@@ -573,26 +609,101 @@ import type { User } from '../../shared/models/user';
         margin: 0 auto;
       }
 
-      .page-header {
+      .page-hero {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-        gap: 1rem;
+        align-items: flex-start;
+        gap: 1.5rem;
+        padding: 2rem;
+        border-radius: 1.5rem;
+        background: linear-gradient(135deg, #0f172a, #312e81);
+        color: #f8fafc;
+        margin-bottom: 1.5rem;
       }
 
-      .page-header h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: 2rem;
+      .page-hero h1 {
+        margin: 0.5rem 0;
+        font-size: 2.4rem;
         font-weight: 700;
-        color: var(--premium-onyx);
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: 0.75rem;
+        color: #fbbf24;
+        margin: 0;
       }
 
       .page-subtitle {
         margin: 0;
+        color: rgba(248, 250, 252, 0.85);
+        max-width: 540px;
+      }
+
+      .hero-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+      }
+
+      .hero-tags span {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(248, 250, 252, 0.12);
+        border: 1px solid rgba(248, 250, 252, 0.2);
+        font-size: 0.85rem;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .btn-secondary.ghost {
+        background: transparent;
+        border: 1px dashed rgba(248, 250, 252, 0.5);
+        color: inherit;
+      }
+
+      .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .insight-card {
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(15, 23, 42, 0.06);
+      }
+
+      .insight-card p {
+        margin: 0;
+        font-size: 0.85rem;
         color: var(--premium-titanium);
-        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .insight-card h3 {
+        margin: 0.35rem 0;
+        font-size: 1.9rem;
+        color: var(--premium-onyx);
+      }
+
+      .insight-card small {
+        color: #94a3b8;
+      }
+
+      .insight-card.highlight {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: none;
       }
 
       .panel {
@@ -1541,6 +1652,13 @@ export class OrdersComponent implements OnInit {
   pageSize = signal(20);
   readonly pageSizeOptions = [10, 20, 50];
   totalOrders = signal(0);
+  ordersInsights = signal({
+    pending: 0,
+    confirmed: 0,
+    cancelled: 0,
+    revenue: 0,
+    average: 0,
+  });
   private statusFilter$ = new BehaviorSubject<string>('');
   private customerFilter$ = new BehaviorSubject<string>('');
   private page$ = new BehaviorSubject<number>(1);
@@ -1619,6 +1737,27 @@ export class OrdersComponent implements OnInit {
       tap((response) => {
         this.loading.set(false);
         this.totalOrders.set(response.total);
+        const summary = response.items.reduce(
+          (acc, order) => {
+            acc.revenue += order.total?.amount ?? 0;
+            if (order.status === 'PendingPayment') {
+              acc.pending += 1;
+            } else if (order.status === 'Confirmed') {
+              acc.confirmed += 1;
+            } else if (order.status === 'Cancelled') {
+              acc.cancelled += 1;
+            }
+            return acc;
+          },
+          { pending: 0, confirmed: 0, cancelled: 0, revenue: 0 }
+        );
+        this.ordersInsights.set({
+          pending: summary.pending,
+          confirmed: summary.confirmed,
+          cancelled: summary.cancelled,
+          revenue: summary.revenue,
+          average: response.items.length ? summary.revenue / response.items.length : 0,
+        });
         if (this.page() !== response.page) {
           this.page.set(response.page);
         }

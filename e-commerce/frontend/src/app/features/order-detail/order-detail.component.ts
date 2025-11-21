@@ -64,6 +64,26 @@ import type { ReturnRequest } from '../../shared/models/returns';
               </div>
             </div>
           </section>
+          <section class="payment-card">
+            <h2>Payment summary</h2>
+            <div class="payment-breakdown">
+              <div>
+                <span>Merchandise</span>
+                <strong>{{ getOrderSubtotal(order) | currency : order.total.currency }}</strong>
+              </div>
+              <div>
+                <span>Shipping</span>
+                <strong>{{ order.shippingAddress ? 'Included' : 'At pickup' }}</strong>
+              </div>
+              <div class="grand-total">
+                <span>Total charged</span>
+                <strong>{{ order.total.amount | currency : order.total.currency }}</strong>
+              </div>
+            </div>
+            <p class="muted">
+              Mirrors the checkout confirmation so finance and CX teams see the same numbers.
+            </p>
+          </section>
           <section class="return-card" *ngIf="order.status === 'Confirmed'">
             <div class="return-card__header">
               <div>
@@ -128,6 +148,17 @@ import type { ReturnRequest } from '../../shared/models/returns';
                 {{ item.unitPrice.amount * item.quantity | currency : item.unitPrice.currency }}
               </div>
             </article>
+          </section>
+          <section class="support-card">
+            <h2>Concierge &amp; support</h2>
+            <p>
+              Need to adjust shipping, apply a manual refund, or flag QA feedback? Jump into the returns workspace
+              without leaving the order.
+            </p>
+            <div class="support-actions">
+              <button class="btn-outline" type="button" (click)="openReturnsWorkspace(order.id)">Open returns console</button>
+              <button class="btn-gold" type="button" (click)="contactSupport(order)">Email concierge</button>
+            </div>
           </section>
         </div>
       </div>
@@ -207,7 +238,7 @@ import type { ReturnRequest } from '../../shared/models/returns';
 
       .order-grid {
         display: grid;
-        grid-template-columns: 340px 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
       }
 
@@ -226,8 +257,48 @@ import type { ReturnRequest } from '../../shared/models/returns';
         color: #11172b;
       }
 
-      .return-card {
+      .return-card,
+      .items-card,
+      .support-card {
         grid-column: span 2;
+      }
+      .payment-card {
+        background: #fff;
+        border-radius: 24px;
+        padding: 1.75rem;
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(212, 175, 55, 0.15);
+      }
+
+      .payment-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        margin: 1rem 0;
+      }
+
+      .payment-breakdown div {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        color: #11172b;
+      }
+
+      .payment-breakdown span {
+        color: #6b7280;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .payment-breakdown .grand-total {
+        border-top: 1px solid #f3f4f6;
+        padding-top: 0.75rem;
+      }
+
+      .muted {
+        color: #6b7280;
+        margin: 0;
+        font-size: 0.9rem;
       }
 
       .return-card__header {
@@ -240,6 +311,31 @@ import type { ReturnRequest } from '../../shared/models/returns';
       .btn-gold {
         margin-top: 1rem;
         padding: 0.75rem 1.5rem;
+      .btn-outline {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        background: transparent;
+        color: #11172b;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .support-card {
+        background: #fff;
+        border-radius: 24px;
+        padding: 1.75rem;
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(212, 175, 55, 0.15);
+      }
+
+      .support-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
         border: none;
         border-radius: 999px;
         background: linear-gradient(120deg, #fcd34d, #f59e0b);
@@ -409,7 +505,9 @@ import type { ReturnRequest } from '../../shared/models/returns';
           flex-direction: column;
         }
 
-        .return-card {
+        .return-card,
+        .items-card,
+        .support-card {
           grid-column: span 1;
         }
       }
@@ -448,6 +546,22 @@ export class OrderDetailComponent implements OnInit {
     } else {
       this.router.navigate(['/my-orders']);
     }
+  }
+
+  getOrderSubtotal(order: Order): number {
+    return order.items.reduce((sum, item) => sum + item.unitPrice.amount * item.quantity, 0);
+  }
+
+  openReturnsWorkspace(orderId: string): void {
+    this.router.navigate(['/returns'], { queryParams: { orderId } });
+  }
+
+  contactSupport(order: Order): void {
+    const subject = encodeURIComponent(`Order ${order.id} assistance`);
+    const body = encodeURIComponent(
+      `Hi Premium Commerce Concierge,%0D%0A%0D%0AOrder ID: ${order.id}%0D%0AStatus: ${order.status}%0D%0APlease help me with ...`
+    );
+    window.open(`mailto:support@premiumcommerce.io?subject=${subject}&body=${body}`, '_blank');
   }
 
   submitReturn(orderId: string): void {
