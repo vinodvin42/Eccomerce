@@ -121,7 +121,7 @@ class OrderService:
         await self.session.refresh(order, attribute_names=["items"])
 
         # Publish order.created event
-        from app.core.events import publish_order_created
+        from app.core.events import publish_order_created, publish_order_pending_payment
 
         publish_order_created(
             order_id=order.id,
@@ -130,6 +130,15 @@ class OrderService:
             amount=float(total_amount),
             currency=currency,
         )
+
+        # Publish order.pending_payment if order requires payment
+        if order_status == OrderStatus.pending_payment:
+            publish_order_pending_payment(
+                order_id=order.id,
+                tenant_id=tenant_id,
+                amount=float(total_amount),
+                currency=currency,
+            )
 
         # Send order confirmation notification (async)
         # Get customer email from user

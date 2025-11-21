@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.events import publish_tenant_provisioned, publish_tenant_suspended
 from app.db.models.category import Category
 from app.db.models.payment_method import PaymentMethod, PaymentMethodType
 from app.db.models.shipping_method import ShippingMethod
@@ -40,6 +41,14 @@ class TenantService:
         self.session.add(tenant)
         await self.session.commit()
         await self.session.refresh(tenant)
+
+        # Publish tenant.provisioned event
+        publish_tenant_provisioned(
+            tenant_id=tenant.id,
+            name=tenant.name,
+            slug=tenant.slug,
+        )
+
         return tenant
 
     async def onboard_tenant(self, actor_id: UUID, payload: TenantOnboardingRequest) -> dict:
@@ -191,6 +200,13 @@ class TenantService:
         # Commit all changes
         await self.session.commit()
         await self.session.refresh(tenant)
+
+        # Publish tenant.provisioned event
+        publish_tenant_provisioned(
+            tenant_id=tenant.id,
+            name=tenant.name,
+            slug=tenant.slug,
+        )
 
         return {
             "tenant": tenant,

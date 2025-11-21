@@ -253,7 +253,7 @@ class ProductService:
 
         return product
 
-    async def reserve_inventory(self, tenant_id: UUID, product_id: UUID, quantity: int) -> Product:
+    async def reserve_inventory(self, tenant_id: UUID, product_id: UUID, quantity: int, low_inventory_threshold: int = 10) -> Product:
         """Reserve inventory safely, preventing oversell."""
         result = await self.session.execute(
             select(Product)
@@ -270,10 +270,22 @@ class ProductService:
                 detail=f"Insufficient inventory. Available: {product.inventory}, Requested: {quantity}",
             )
 
+        old_inventory = product.inventory
         product.inventory -= quantity
 
         await self.session.commit()
         await self.session.refresh(product)
+
+        # Check if inventory is now below threshold and wasn't before
+        if product.inventory < low_inventory_threshold and old_inventory >= low_inventory_threshold:
+            from app.core.events import publish_product_inventory_low
+
+            publish_product_inventory_low(
+                product_id=product.id,
+                tenant_id=tenant_id,
+                current_inventory=product.inventory,
+                threshold=low_inventory_threshold,
+            )
 
         return product
 

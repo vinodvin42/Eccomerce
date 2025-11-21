@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.events import publish_user_updated
 from app.db.models.user import User, UserRole, UserStatus
 from app.schemas.user import UserCreate, UserUpdate
 from app.services.auth import get_password_hash
@@ -87,6 +88,7 @@ class UserService:
     async def update_user(self, user_id: UUID, actor_id: UUID, payload: UserUpdate) -> User:
         """Update user."""
         user = await self.get_user(user_id)
+        changes = {}
 
         if payload.email is not None:
             # Check if email is already taken by another user
@@ -98,6 +100,7 @@ class UserService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Email already in use",
                 )
+            changes["email"] = {"old": user.email, "new": payload.email}
             user.email = payload.email
 
         if payload.username is not None:
@@ -110,23 +113,37 @@ class UserService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Username already in use",
                 )
+            changes["username"] = {"old": user.username, "new": payload.username}
             user.username = payload.username
 
         if payload.full_name is not None:
+            changes["full_name"] = {"old": user.full_name, "new": payload.full_name}
             user.full_name = payload.full_name
 
         if payload.role is not None:
+            changes["role"] = {"old": user.role.value if user.role else None, "new": payload.role.value}
             user.role = payload.role
 
         if payload.status is not None:
+            changes["status"] = {"old": user.status.value if user.status else None, "new": payload.status.value}
             user.status = payload.status
 
         if payload.mfa_enabled is not None:
+            changes["mfa_enabled"] = {"old": user.mfa_enabled, "new": payload.mfa_enabled}
             user.mfa_enabled = payload.mfa_enabled
 
         user.modified_by = actor_id
         await self.session.commit()
         await self.session.refresh(user)
+
+        # Publish user.updated event if there were changes
+        if changes and user.tenant_id:
+            publish_user_updated(
+                user_id=user.id,
+                tenant_id=user.tenant_id,
+                changes=changes,
+            )
+
         return user
 
     async def delete_user(self, user_id: UUID) -> None:

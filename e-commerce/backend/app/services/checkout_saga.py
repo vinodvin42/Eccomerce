@@ -10,7 +10,13 @@ import structlog
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.events import publish_event, publish_order_confirmed, publish_order_created
+from app.core.events import (
+    publish_event,
+    publish_inventory_reserved,
+    publish_order_cancelled,
+    publish_order_confirmed,
+    publish_order_created,
+)
 from app.db.models.order import Order, OrderStatus
 from app.db.models.payment_transaction import PaymentStatus
 from app.services.orders import OrderService
@@ -88,19 +94,16 @@ class CheckoutSagaOrchestrator:
             logger.info("saga_step_started", step=SagaStep.RESERVE_INVENTORY, order_id=str(order.id))
             # Inventory reservation happens during order creation
             # Publish inventory reserved event
-            publish_event(
-                event_name="inventory.reserved",
-                event_data={
-                    "orderId": str(order.id),
-                    "tenantId": str(tenant_id),
-                    "items": [
-                        {
-                            "productId": str(item.product_id),
-                            "quantity": item.quantity,
-                        }
-                        for item in order.items
-                    ],
-                },
+            publish_inventory_reserved(
+                order_id=order.id,
+                tenant_id=tenant_id,
+                items=[
+                    {
+                        "productId": str(item.product_id),
+                        "quantity": item.quantity,
+                    }
+                    for item in order.items
+                ],
             )
             compensation_steps.append(SagaStep.RESERVE_INVENTORY)
             logger.info("saga_step_completed", step=SagaStep.RESERVE_INVENTORY, order_id=str(order.id))
@@ -244,13 +247,10 @@ class CheckoutSagaOrchestrator:
                     order.modified_by = actor_id
                     await self.session.commit()
                     # Publish order cancelled event
-                    publish_event(
-                        event_name="order.cancelled",
-                        event_data={
-                            "orderId": str(order.id),
-                            "tenantId": str(tenant_id),
-                            "reason": "Saga compensation - checkout failed",
-                        },
+                    publish_order_cancelled(
+                        order_id=order.id,
+                        tenant_id=tenant_id,
+                        reason="Saga compensation - checkout failed",
                     )
                     logger.info("saga_compensated", step=step.value, order_id=str(order.id))
 

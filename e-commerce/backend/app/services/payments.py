@@ -9,6 +9,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.events import (
+    publish_payment_failed,
+    publish_payment_intent_created,
+    publish_payment_succeeded,
+)
 from app.db.models.order import Order, OrderStatus
 from app.db.models.payment_method import PaymentMethod, PaymentMethodType
 from app.db.models.payment_transaction import PaymentProvider, PaymentStatus, PaymentTransaction
@@ -130,6 +135,17 @@ class PaymentService:
 
         await self.session.commit()
         await self.session.refresh(transaction)
+
+        # Publish payment.intent_created event
+        publish_payment_intent_created(
+            transaction_id=transaction.id,
+            order_id=order_id,
+            tenant_id=tenant_id,
+            amount=float(transaction.amount),
+            currency=transaction.amount_currency,
+            provider=transaction.provider.value if transaction.provider else None,
+        )
+
         return transaction
 
     async def confirm_payment(
@@ -203,6 +219,25 @@ class PaymentService:
 
         await self.session.commit()
         await self.session.refresh(transaction)
+
+        # Publish payment events
+        if transaction.status == PaymentStatus.succeeded:
+            publish_payment_succeeded(
+                transaction_id=transaction.id,
+                order_id=transaction.order_id,
+                tenant_id=tenant_id,
+                amount=float(transaction.amount),
+                currency=transaction.amount_currency,
+                provider=transaction.provider.value if transaction.provider else None,
+            )
+        elif transaction.status == PaymentStatus.failed:
+            publish_payment_failed(
+                transaction_id=transaction.id,
+                order_id=transaction.order_id,
+                tenant_id=tenant_id,
+                failure_reason=transaction.failure_reason or "Payment confirmation failed",
+            )
+
         return transaction
 
     async def get_payment_status(self, tenant_id: UUID, transaction_id: UUID) -> PaymentTransaction:
@@ -231,9 +266,25 @@ class PaymentService:
                     order = order_result.scalar_one_or_none()
                     if order:
                         order.status = OrderStatus.confirmed
+                    # Publish payment succeeded event
+                    publish_payment_succeeded(
+                        transaction_id=transaction.id,
+                        order_id=transaction.order_id,
+                        tenant_id=transaction.tenant_id,
+                        amount=float(transaction.amount),
+                        currency=transaction.amount_currency,
+                        provider=transaction.provider.value if transaction.provider else None,
+                    )
                 elif result.status == "failed":
                     transaction.status = PaymentStatus.failed
                     transaction.failure_reason = result.error_message
+                    # Publish payment failed event
+                    publish_payment_failed(
+                        transaction_id=transaction.id,
+                        order_id=transaction.order_id,
+                        tenant_id=transaction.tenant_id,
+                        failure_reason=result.error_message or "Payment failed",
+                    )
 
                 await self.session.commit()
                 await self.session.refresh(transaction)
